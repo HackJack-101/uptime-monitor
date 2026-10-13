@@ -8,6 +8,7 @@ import { DynamicForm, initialConfig, secretsPayload, type SecretInput } from '..
 import { Button, Card, CardHeader, Field, Input, PageHeader, PageLoader, Switch, useToast } from '../components/ui';
 import { useMeta } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
+import { monitorQuery, projectQuery } from '../lib/queries';
 import type { CheckSettingsOverrides, Monitor, Project } from '../lib/types';
 import { BackLink } from './ProjectDetail';
 
@@ -16,21 +17,14 @@ const TYPE_ICON: Record<string, typeof Globe> = { http: Globe, tcp: Network, pin
 export function MonitorFormPage() {
   const params = useParams();
   const monitorId = params.monitorId ? Number(params.monitorId) : undefined;
-  const existing = useQuery({
-    queryKey: ['monitor', monitorId],
-    queryFn: () => api.get<{ monitor: Monitor }>(`/api/monitors/${monitorId}`).then((r) => r.monitor),
-    enabled: Boolean(monitorId),
-  });
-  const projectId = monitorId ? existing.data?.project_id : Number(params.id);
-  const project = useQuery({
-    queryKey: ['project', projectId],
-    queryFn: () => api.get<{ project: Project }>(`/api/projects/${projectId}`).then((r) => r.project),
-    enabled: Boolean(projectId),
-  });
+  const existing = useQuery({ ...monitorQuery(monitorId ?? 0), enabled: Boolean(monitorId) });
+  const monitor = existing.data?.monitor;
+  const projectId = monitorId ? monitor?.project_id : Number(params.id);
+  const project = useQuery({ ...projectQuery(projectId ?? 0), enabled: Boolean(projectId) });
   const meta = useMeta();
 
-  if (!meta.data || !project.data || (monitorId && !existing.data)) return <PageLoader />;
-  return <MonitorFormInner key={monitorId ?? 'new'} monitor={existing.data} project={project.data} />;
+  if (!meta.data || !project.data || (monitorId && !monitor)) return <PageLoader />;
+  return <MonitorFormInner key={monitorId ?? 'new'} monitor={monitor} project={project.data} />;
 }
 
 function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Project }) {

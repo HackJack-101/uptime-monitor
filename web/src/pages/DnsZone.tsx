@@ -6,7 +6,8 @@ import { Link, useParams } from 'react-router';
 import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader, StatusDot, useToast } from '../components/ui';
 import { api, ApiError, errorText } from '../lib/api';
 import { timeAgo } from '../lib/format';
-import type { DnsEntry, DnsMonitorRef, DnsView, HostState, Project } from '../lib/types';
+import { projectQuery } from '../lib/queries';
+import type { DnsEntry, DnsMonitorRef, DnsView, HostState } from '../lib/types';
 import { BackLink } from './ProjectDetail';
 
 const STATE: Record<HostState, { label: string; dot: string; tone: 'green' | 'red' | 'amber' | 'zinc' | 'brand' }> = {
@@ -92,10 +93,7 @@ export function DnsZonePage() {
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
 
-  const project = useQuery({
-    queryKey: ['project', projectId],
-    queryFn: () => api.get<{ project: Project }>(`/api/projects/${projectId}`).then((r) => r.project),
-  });
+  const project = useQuery(projectQuery(projectId));
   const dns = useQuery({
     queryKey: ['dns', projectId],
     queryFn: () => api.get<DnsView>(`/api/projects/${projectId}/dns`),

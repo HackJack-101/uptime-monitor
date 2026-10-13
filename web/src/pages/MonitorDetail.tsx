@@ -9,7 +9,8 @@ import { Button, Card, CardHeader, ConfirmDialog, EmptyState, PageHeader, PageLo
 import { useMeta } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
 import { dateTime, duration, ms, pct, seconds, STATUS_COLOR, timeAgo } from '../lib/format';
-import type { Heartbeat, Incident, Monitor, MonitorStatus, UptimeStat } from '../lib/types';
+import { monitorQuery } from '../lib/queries';
+import type { Heartbeat, Incident, Monitor, MonitorStatus } from '../lib/types';
 import { BackLink } from './ProjectDetail';
 
 const RANGES = [
@@ -45,11 +46,7 @@ export function MonitorDetailPage() {
   const [tab, setTab] = useState<'overview' | 'notifications'>('overview');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const detail = useQuery({
-    queryKey: ['monitor', id],
-    queryFn: () => api.get<{ monitor: Monitor; stats: Record<string, UptimeStat | null> }>(`/api/monitors/${id}`),
-    refetchInterval: 15_000,
-  });
+  const detail = useQuery({ ...monitorQuery(id), refetchInterval: 15_000 });
   const results = useQuery({
     queryKey: ['monitor', id, 'results', range],
     queryFn: () => api.get<{ results: Heartbeat[]; latest: Heartbeat[] }>(`/api/monitors/${id}/results?hours=${range}`),

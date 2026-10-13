@@ -9,6 +9,7 @@ import { OvhSettings, useOvhAccount } from '../components/OvhSettings';
 import { Badge, Button, Card, CardHeader, ConfirmDialog, EmptyState, Field, Input, PageHeader, PageLoader, Select, Tabs, Textarea, useToast } from '../components/ui';
 import { useAuth, useMeta } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
+import { projectQuery } from '../lib/queries';
 import type { CheckSettingsOverrides, ManagedUser, MemberRole, Monitor, Project } from '../lib/types';
 import { ColorPicker } from './Projects';
 
@@ -185,7 +186,7 @@ export function ProjectDetailPage() {
   const tab = (['monitors', 'notifications', 'members', 'settings'].includes(params.get('tab') ?? '') ? params.get('tab') : 'monitors') as Tab;
   const setTab = (t: Tab) => setParams(t === 'monitors' ? {} : { tab: t }, { replace: true });
   const ovh = useOvhAccount(id);
-  const project = useQuery({ queryKey: ['project', id], queryFn: () => api.get<{ project: Project }>(`/api/projects/${id}`).then((r) => r.project) });
+  const project = useQuery(projectQuery(id));
   const monitors = useQuery({
     queryKey: ['monitors', 'project', id],
     queryFn: () => api.get<{ monitors: Monitor[] }>(`/api/monitors?projectId=${id}`).then((r) => r.monitors),

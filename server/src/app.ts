@@ -13,6 +13,7 @@ import { Database } from './db.js';
 import { HttpError } from './http.js';
 import { NotificationEngine } from './notifications/engine.js';
 import { authRoutes } from './routes/auth.js';
+import { dnsRoutes } from './routes/dns.js';
 import { metaRoutes } from './routes/meta.js';
 import { monitorRoutes } from './routes/monitors.js';
 import { notificationRoutes } from './routes/notifications.js';
@@ -27,6 +28,7 @@ export interface BuildOptions {
   startScheduler?: boolean;
   staticDir?: string;
   bootstrap?: { email: string; password: string; name: string };
+  ovhBaseUrl?: string;
 }
 
 export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstance; ctx: AppContext }> {
@@ -64,7 +66,7 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
     }
   }
 
-  const ctx: AppContext = { db, box, notifier, scheduler, setupToken };
+  const ctx: AppContext = { db, box, notifier, scheduler, setupToken, ovhBaseUrl: opts.ovhBaseUrl };
 
   await app.register(helmet, {
     contentSecurityPolicy: {
@@ -104,6 +106,7 @@ export async function buildApp(opts: BuildOptions): Promise<{ app: FastifyInstan
   monitorRoutes(app, ctx);
   notificationRoutes(app, ctx);
   metaRoutes(app, ctx);
+  dnsRoutes(app, ctx);
 
   const staticDir = opts.staticDir;
   if (staticDir && fs.existsSync(path.join(staticDir, 'index.html'))) {

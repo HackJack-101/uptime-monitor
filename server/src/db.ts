@@ -164,6 +164,20 @@ const migrations: string[] = [
     value TEXT NOT NULL
   );
   `,
+  /* 002 - OVH DNS zone integration (one account / zone per project) */ `
+  CREATE TABLE ovh_accounts (
+    project_id INTEGER PRIMARY KEY REFERENCES projects (id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL,
+    application_key TEXT NOT NULL,
+    secrets TEXT NOT NULL,
+    zone TEXT NOT NULL,
+    records TEXT,
+    synced_at TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+  );
+  `,
 ];
 
 export class Database {

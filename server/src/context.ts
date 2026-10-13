@@ -10,4 +10,6 @@ export interface AppContext {
   scheduler: Scheduler;
   /** One-time token required to create the superadmin from the web UI (null once set up). */
   setupToken: string | null;
+  /** Test hook: replaces the OVH API base URL. */
+  ovhBaseUrl?: string;
 }

@@ -1,0 +1,32 @@
+# Example stack — paste it into Portainer (Stacks → Add stack) or run `docker compose up -d`.
+services:
+  uptime-monitor:
+    image: ghcr.io/OWNER/uptime-monitor:latest
+    container_name: uptime-monitor
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - uptime-data:/data
+    environment:
+      # 32+ random characters used to encrypt stored secrets. Generate with: openssl rand -base64 48
+      # If omitted, a key is generated in /data/secret.key on first start (keep that volume backed up!).
+      APP_SECRET: ${APP_SECRET:-}
+      # Public URL used for links in notifications.
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      # Set to true when running behind a reverse proxy (Traefik, Nginx Proxy Manager, Caddy…).
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      # Optional: create the superadmin on first start instead of using the setup token.
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-}
+      # Optional: SMTP for email notifications.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      TZ: ${TZ:-Europe/Paris}
+
+volumes:
+  uptime-data:

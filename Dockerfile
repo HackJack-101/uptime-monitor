@@ -1,0 +1,54 @@
+# syntax=docker/dockerfile:1.7
+
+# ---- Build: compile the web UI and the server -------------------------------
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY server/package.json server/
+COPY web/package.json web/
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+COPY server server
+COPY web web
+RUN npm run build
+
+# ---- Production dependencies of the server only ----------------------------
+FROM node:24-bookworm-slim AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY server/package.json server/
+COPY web/package.json web/
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --workspace server --no-audit --no-fund
+
+# ---- Runtime ------------------------------------------------------------------
+FROM node:24-bookworm-slim AS runtime
+ARG APP_VERSION=dev
+LABEL org.opencontainers.image.title="uptime-monitor" \
+      org.opencontainers.image.description="Self-hosted multi-project uptime monitoring" \
+      org.opencontainers.image.version="${APP_VERSION}"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends iputils-ping ca-certificates tini \
+ && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production \
+    APP_VERSION=${APP_VERSION} \
+    PORT=3000 \
+    DATA_DIR=/data \
+    STATIC_DIR=/app/web/dist
+
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/server/dist ./server/dist
+COPY --from=build /app/server/package.json ./server/
+COPY --from=build /app/web/dist ./web/dist
+
+RUN mkdir -p /data && chown node:node /data
+USER node
+VOLUME ["/data"]
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["node", "--disable-warning=ExperimentalWarning", "server/dist/index.js"]

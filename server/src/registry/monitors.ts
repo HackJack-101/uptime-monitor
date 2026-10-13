@@ -149,7 +149,7 @@ export const monitorTypes: TypeDef[] = [
         kind: 'text',
         placeholder: 'systemctl is-active nginx',
         showIf: { field: 'authMethod', in: ['password', 'key'] },
-        help: 'Optional. The check fails if the command exits with a non-zero code.',
+        help: 'Optional. The check fails on a non-zero exit code; the first lines of the output are shown in the dashboard and alerts. See Guide → SSH server check.',
       },
       {
         key: 'expectedOutput',

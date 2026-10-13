@@ -99,7 +99,7 @@ Project ──┬── Monitors ──── Monitor rules (optional)
   | User (editor) | Assigned projects: manage monitors, channels, rules |
   | User (viewer) | Assigned projects: read-only |
 
-The full user documentation is built into the web UI under **Guide**.
+The full user documentation is built into the web UI under **Guide**, including a step-by-step **SSH server check** setup (dedicated unprivileged user, key restricted to a read-only health-check script, host key pinning).
 
 ### OVH DNS zone view
 

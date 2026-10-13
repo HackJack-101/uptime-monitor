@@ -23,6 +23,25 @@ function bannerCheck(host: string, port: number, timeoutMs: number): Promise<Che
   });
 }
 
+const MAX_OUTPUT = 65536;
+const SUMMARY_LINES = 3;
+const SUMMARY_CHARS = 300;
+
+/**
+ * Short, single-line summary of a command output for the dashboard and alerts:
+ * the first non-empty lines (stdout first, then stderr), without terminal escape codes.
+ */
+export function summarizeOutput(stdout: string, stderr = ''): string {
+  const lines = `${stdout}\n${stderr}`
+    .replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
+    .split(/\r?\n/)
+    .map((l) => l.replace(/[\x00-\x1f\x7f]/g, ' ').trim())
+    .filter(Boolean);
+  const summary = lines.slice(0, SUMMARY_LINES).join(' · ');
+  const more = lines.length > SUMMARY_LINES ? ` (+${lines.length - SUMMARY_LINES} more)` : '';
+  return summary.length > SUMMARY_CHARS ? `${summary.slice(0, SUMMARY_CHARS - 1)}…` : summary + more;
+}
+
 export function fingerprint(key: Buffer): string {
   return `SHA256:${crypto.createHash('sha256').update(key).digest('base64').replace(/=+$/, '')}`;
 }
@@ -71,18 +90,23 @@ export const sshChecker: Checker = async ({ config, secrets, timeoutMs }) => {
       if (!config.command) return finish({ ok: true, latencyMs: connectMs, message: 'Authenticated' });
       client.exec(String(config.command), (err, stream) => {
         if (err) return finish({ ok: false, latencyMs: null, message: errorMessage(err) });
-        let output = '';
+        let stdout = '';
+        let stderr = '';
         stream.on('data', (d: Buffer) => {
-          if (output.length < 65536) output += d.toString('utf8');
+          if (stdout.length < MAX_OUTPUT) stdout += d.toString('utf8');
         });
-        stream.stderr.on('data', () => {});
+        stream.stderr.on('data', (d: Buffer) => {
+          if (stderr.length < MAX_OUTPUT) stderr += d.toString('utf8');
+        });
         stream.on('close', (code: number | null) => {
           const latencyMs = elapsed(start);
-          if (code !== 0) return finish({ ok: false, latencyMs, message: `Command exited with code ${code}` });
-          if (config.expectedOutput && !output.includes(String(config.expectedOutput))) {
-            return finish({ ok: false, latencyMs, message: 'Expected output not found' });
+          const output = summarizeOutput(stdout, stderr);
+          const withOutput = (text: string) => (output ? `${text}: ${output}` : text);
+          if (code !== 0) return finish({ ok: false, latencyMs, message: withOutput(`Command exited with code ${code ?? 'unknown'}`) });
+          if (config.expectedOutput && !stdout.includes(String(config.expectedOutput))) {
+            return finish({ ok: false, latencyMs, message: withOutput('Expected output not found') });
           }
-          finish({ ok: true, latencyMs, message: 'Command succeeded' });
+          finish({ ok: true, latencyMs, message: output || 'Command succeeded' });
         });
       });
     });

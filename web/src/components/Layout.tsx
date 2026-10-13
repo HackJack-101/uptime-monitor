@@ -6,6 +6,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth, useMeta } from '../hooks/useAuth';
 import { api } from '../lib/api';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
+import type { Meta } from '../lib/types';
 
 function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>(getTheme());
@@ -37,6 +38,32 @@ function ThemeToggle() {
         </button>
       ))}
     </div>
+  );
+}
+
+/** Version and short commit SHA of the running image; the full SHA is only shown on hover. */
+function BuildInfo({ meta }: { meta: Meta }) {
+  const sha = meta.shortCommit && (
+    <span className="font-mono" title={meta.commit ?? undefined}>
+      {meta.shortCommit}
+    </span>
+  );
+  return (
+    <p className="flex items-center gap-1.5 px-2 text-[11px] text-zinc-400">
+      <span>v{meta.version}</span>
+      {sha && (
+        <>
+          <span aria-hidden>·</span>
+          {meta.commitUrl ? (
+            <a href={meta.commitUrl} target="_blank" rel="noreferrer noopener" className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-200" aria-label={`Commit ${meta.commit}`}>
+              {sha}
+            </a>
+          ) : (
+            sha
+          )}
+        </>
+      )}
+    </p>
   );
 }
 
@@ -107,7 +134,7 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
             <LogOut className="size-4" />
           </button>
         </div>
-        {meta.data && <p className="px-2 text-[11px] text-zinc-400">v{meta.data.version}</p>}
+        {meta.data && <BuildInfo meta={meta.data} />}
       </div>
     </div>
   );

@@ -98,6 +98,9 @@ export interface TypeDef {
 
 export interface Meta {
   version: string;
+  commit: string | null;
+  shortCommit: string | null;
+  commitUrl: string | null;
   monitorTypes: TypeDef[];
   channelTypes: TypeDef[];
   ruleEvents: RuleEvent[];

@@ -21,10 +21,15 @@ RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --workspace server --
 
 # ---- Runtime ------------------------------------------------------------------
 FROM node:24-bookworm-slim AS runtime
-ARG APP_VERSION=dev
+# Release tag (empty = package.json version), commit SHA and repository URL, injected by CI.
+ARG APP_VERSION=
+ARG GIT_COMMIT=
+ARG SOURCE_URL=
 LABEL org.opencontainers.image.title="uptime-monitor" \
       org.opencontainers.image.description="Self-hosted multi-project uptime monitoring" \
-      org.opencontainers.image.version="${APP_VERSION}"
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.source="${SOURCE_URL}"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends iputils-ping ca-certificates tini \
@@ -32,6 +37,8 @@ RUN apt-get update \
 
 ENV NODE_ENV=production \
     APP_VERSION=${APP_VERSION} \
+    GIT_COMMIT=${GIT_COMMIT} \
+    SOURCE_URL=${SOURCE_URL} \
     PORT=3000 \
     DATA_DIR=/data \
     STATIC_DIR=/app/web/dist

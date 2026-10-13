@@ -193,6 +193,8 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request 
 2. Build a multi-arch Docker image (`linux/amd64`, `linux/arm64`).
 3. On `master`, push `ghcr.io/hackjack-101/uptime-monitor:latest` and `:sha-<commit>`. On `vX.Y.Z` tags, also push `:X.Y.Z` and `:X.Y`.
 
+The commit is baked into the image. The web UI shows the version and the short commit SHA at the bottom of the sidebar (e.g. `v0.1.0 · c23a429`), linking to the commit on GitHub.
+
 To redeploy in Portainer, use **Pull and redeploy** on the stack, or enable a stack webhook.
 
 ## Commit convention

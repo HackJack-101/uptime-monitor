@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { currentUser, visibleProjectsFilter } from '../auth.js';
+import { buildInfo } from '../build-info.js';
 import { smtpConfigured } from '../config.js';
 import type { AppContext } from '../context.js';
 import { channelTypes } from '../registry/channels.js';
@@ -7,15 +8,16 @@ import { monitorTypes } from '../registry/monitors.js';
 import { DEFAULT_CHECK_SETTINGS } from '../settings.js';
 import { RULE_EVENTS } from '../types.js';
 
-export const VERSION = process.env.APP_VERSION ?? '0.1.0';
-
 export function metaRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
 
   app.get('/api/meta', async (req) => {
     currentUser(req);
     return {
-      version: VERSION,
+      version: buildInfo.version,
+      commit: buildInfo.commit,
+      shortCommit: buildInfo.shortCommit,
+      commitUrl: buildInfo.commitUrl,
       monitorTypes,
       channelTypes,
       ruleEvents: RULE_EVENTS,

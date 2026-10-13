@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # ---- Build: compile the web UI and the server -------------------------------
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -12,7 +12,7 @@ COPY web web
 RUN npm run build
 
 # ---- Production dependencies of the server only ----------------------------
-FROM node:24-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -20,7 +20,7 @@ COPY web/package.json web/
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --workspace server --no-audit --no-fund
 
 # ---- Runtime ------------------------------------------------------------------
-FROM node:24-bookworm-slim AS runtime
+FROM node:26-bookworm-slim AS runtime
 # Release tag (empty = package.json version), commit SHA and repository URL, injected by CI.
 ARG APP_VERSION=
 ARG GIT_COMMIT=

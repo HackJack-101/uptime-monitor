@@ -176,11 +176,18 @@ export class Scheduler {
         message,
         checkedAt,
       );
-      if (status === 'paused') {
-        // no incident tracking while paused
-      } else if (changed && status === 'down') {
-        this.db.run('INSERT INTO incidents (monitor_id, cause, started_at) VALUES (?, ?, ?)', monitor.id, message, checkedAt);
-      } else if (changed && previous === 'down') {
+      // Incidents follow the monitor state, not status transitions: an edit resets the status to
+      // "pending", so pending → up must still close the outage and pending → down must not open a second one.
+      if (status === 'down') {
+        this.db.run(
+          `INSERT INTO incidents (monitor_id, cause, started_at)
+           SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM incidents WHERE monitor_id = ? AND resolved_at IS NULL)`,
+          monitor.id,
+          message,
+          checkedAt,
+          monitor.id,
+        );
+      } else if (status === 'up' || status === 'degraded') {
         this.db.run('UPDATE incidents SET resolved_at = ? WHERE monitor_id = ? AND resolved_at IS NULL', checkedAt, monitor.id);
       }
     });

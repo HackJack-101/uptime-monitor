@@ -219,7 +219,8 @@ export function monitorRoutes(app: FastifyInstance, ctx: AppContext): void {
       nowIso(),
       monitor.id,
     );
-    if (status === 'paused' && monitor.status === 'down') {
+    // Pausing ends any open outage (it may have been opened before an edit reset the status to pending).
+    if (status === 'paused') {
       db.run('UPDATE incidents SET resolved_at = ? WHERE monitor_id = ? AND resolved_at IS NULL', nowIso(), monitor.id);
     }
     scheduler.refresh(monitor.id);

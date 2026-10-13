@@ -178,6 +178,26 @@ const migrations: string[] = [
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
   );
   `,
+  /* 003 - close incidents left open by the transition-based logic (edits reset the status to pending) */ `
+  -- Older duplicates of an incident still open for the same monitor end when the newer one starts.
+  UPDATE incidents SET resolved_at = (
+    SELECT MIN(n.started_at) FROM incidents n
+    WHERE n.monitor_id = incidents.monitor_id AND n.resolved_at IS NULL AND n.started_at > incidents.started_at
+  )
+  WHERE resolved_at IS NULL AND EXISTS (
+    SELECT 1 FROM incidents n
+    WHERE n.monitor_id = incidents.monitor_id AND n.resolved_at IS NULL AND n.started_at > incidents.started_at
+  );
+  -- Remaining open incidents of monitors that are not down end at the first successful check after they
+  -- started (or now, if the history was purged).
+  UPDATE incidents SET resolved_at = COALESCE(
+    (SELECT MIN(r.checked_at) FROM check_results r
+     WHERE r.monitor_id = incidents.monitor_id AND r.checked_at > incidents.started_at AND r.status != 'down'),
+    strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  )
+  WHERE resolved_at IS NULL
+    AND monitor_id IN (SELECT id FROM monitors WHERE status != 'down');
+  `,
 ];
 
 export class Database {

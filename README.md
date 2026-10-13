@@ -16,6 +16,7 @@ It ships as a single Docker image, ready for Portainer.
 | **Check rules** | Interval, timeout, retries, retry interval and degraded threshold. Set them per project (defaults) or override them per monitor |
 | **Notification rules** | Events (down / recovered / degraded / certificate expiring) → channels, with a failure threshold and reminders. Scope a rule to a project or to a single monitor |
 | **Security** | Secrets encrypted with AES-256-GCM, write-only API, scrypt password hashing, HTTP-only SameSite cookies, CSRF protection, rate-limited login, audit log, strict CSP |
+| **OVH DNS** | Connect an OVHcloud account per project and see which subdomains of one DNS zone are running, in error or not monitored |
 | **UI** | Responsive (mobile / tablet / desktop), light & dark themes, live dashboard, response-time charts, incident history, built-in guide |
 
 ---
@@ -100,6 +101,17 @@ Project ──┬── Monitors ──── Monitor rules (optional)
 
 The full user documentation is built into the web UI under **Guide**.
 
+### OVH DNS zone view
+
+An admin can connect an **OVHcloud account** to a project (*Project → Settings → OVH DNS zone*) and pick **one domain**. The project then gets a dedicated **DNS zone** page that lists every A / AAAA / CNAME host of that zone and matches it with the project's monitors by hostname:
+
+- **Running**: monitored and up, according to the check rules of the linked monitors.
+- **In error**: at least one linked monitor is down.
+- **Not monitored**: the record exists but nothing checks it (one click creates an HTTPS monitor).
+- **Missing DNS record**: a monitor targets a host of the zone that has no record.
+
+Create **read-only** credentials on the OVH token page (`https://eu.api.ovh.com/createToken/?GET=/domain/zone&GET=/domain/zone/*`, or the `ca` / `us` equivalent). The application secret and consumer key are encrypted at rest and write-only. Zone records are cached for 15 minutes.
+
 ### Notification channels
 
 | Channel | Free | Notes |
@@ -118,7 +130,7 @@ The full user documentation is built into the web UI under **Guide**.
 
 ## Security model
 
-- **Secrets** (HTTP passwords / tokens / API keys, SSH passwords and private keys, webhook URLs, bot tokens) are encrypted with AES-256-GCM using a key derived from `APP_SECRET`. The API **never returns them**: clients only see whether a secret is set. Secret values are masked if they ever appear in a check error message.
+- **Secrets** (HTTP passwords / tokens / API keys, SSH passwords and private keys, webhook URLs, bot tokens, OVH application secrets and consumer keys) are encrypted with AES-256-GCM using a key derived from `APP_SECRET`. The API **never returns them**: clients only see whether a secret is set. Secret values are masked if they ever appear in a check error message.
 - **Credentials are not forwarded** to another origin when an HTTP check follows a redirect.
 - **SSH host key pinning** is available (SHA256 fingerprint) to prevent man-in-the-middle attacks.
 - **Passwords** are hashed with scrypt. **Sessions** are random tokens stored hashed, sent as `HttpOnly; SameSite=Strict` cookies (`Secure` over HTTPS), and revoked when a password, role or account status changes.
@@ -152,6 +164,7 @@ Then open http://localhost:5173. On first run, the setup token is printed in the
 server/                 Fastify API (TypeScript)
   src/checkers/         HTTP, TCP, ping, SSH, DNS, TLS probes
   src/notifications/    channel senders + rule engine
+  src/ovh/              OVHcloud API client + DNS zone / monitor matching
   src/registry/         monitor & channel type definitions (drive validation and UI forms)
   src/routes/           REST endpoints
   src/scheduler.ts      check loop, retries, incidents, retention

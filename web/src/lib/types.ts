@@ -143,3 +143,46 @@ export interface UptimeStat {
   avg_latency: number | null;
   checks: number;
 }
+
+export interface OvhAccount {
+  endpoint: string;
+  applicationKey: string;
+  zone: string;
+  secrets: { applicationSecret: boolean; consumerKey: boolean };
+  syncedAt: string | null;
+  lastError: string | null;
+}
+
+export type HostState = 'running' | 'degraded' | 'error' | 'pending' | 'paused' | 'unmonitored';
+
+export interface DnsMonitorRef {
+  id: number;
+  name: string;
+  type: string;
+  status: MonitorStatus;
+  enabled: boolean;
+}
+
+export interface DnsEntry {
+  fqdn: string;
+  subDomain: string;
+  records: { type: string; target: string; ttl: number }[];
+  monitors: DnsMonitorRef[];
+  state: HostState;
+}
+
+export interface DnsOrphan {
+  fqdn: string;
+  monitors: DnsMonitorRef[];
+  state: HostState;
+}
+
+export interface DnsView {
+  zone: string;
+  syncedAt: string | null;
+  error: string | null;
+  hasRecords: boolean;
+  entries: DnsEntry[];
+  orphans: DnsOrphan[];
+  summary: Record<HostState, number> & { missingRecord: number };
+}

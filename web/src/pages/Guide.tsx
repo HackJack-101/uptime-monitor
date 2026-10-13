@@ -11,6 +11,7 @@ const SECTIONS = [
   { id: 'check-rules', title: 'Check rules' },
   { id: 'notifications', title: 'Notifications' },
   { id: 'channels', title: 'Channel setup' },
+  { id: 'dns', title: 'OVH DNS zone' },
   { id: 'security', title: 'Secrets & security' },
   { id: 'faq', title: 'Troubleshooting' },
 ];
@@ -347,6 +348,46 @@ export function GuidePage() {
           <p>
             <strong>WhatsApp</strong> is not supported. There is no free official API, and unofficial gateways break WhatsApp’s terms of service.
             Use Signal or Telegram instead.
+          </p>
+
+          <h2 id="dns">OVH DNS zone</h2>
+          <p>
+            Connect an OVHcloud account to a project to compare <strong>one DNS zone</strong> with the project’s monitors. The dedicated{' '}
+            <em>DNS zone</em> page lists every host of the zone (A, AAAA and CNAME records) and shows whether it is:
+          </p>
+          <ul>
+            <li>
+              <strong>Running</strong>: at least one monitor targets the host and everything is up, following the check rules of those monitors
+              (degraded hosts are counted as running but flagged).
+            </li>
+            <li>
+              <strong>In error</strong>: one of its monitors is DOWN.
+            </li>
+            <li>
+              <strong>Not monitored</strong>: the record exists, but no monitor of the project targets it. Editors can click <em>Monitor it</em>{' '}
+              to create an HTTPS monitor for it.
+            </li>
+          </ul>
+          <p>
+            A monitor is linked to a host when its target hostname matches exactly: the URL host for HTTP monitors, the hostname for DNS
+            monitors, the host for TCP, ping, SSH and TLS monitors. A wildcard record such as <code>*.apps.example.com</code> groups the monitors
+            of the hosts it resolves (<code>shop.apps.example.com</code>). Monitors targeting a host under the zone that has no record appear
+            under <em>Monitored hosts without a DNS record</em>.
+          </p>
+          <h3>Connecting an account (admins)</h3>
+          <ol>
+            <li>
+              Open the OVH token page for your region (link in the settings form) and create credentials with <strong>GET</strong> rights on{' '}
+              <code>/domain/zone</code> and <code>/domain/zone/*</code>. Read-only credentials are enough, so never grant write rights.
+            </li>
+            <li>
+              In <em>Project → Settings → OVH DNS zone</em>, enter the endpoint, application key, application secret and consumer key, click{' '}
+              <em>Load my domains</em>, pick the domain and save.
+            </li>
+          </ol>
+          <p>
+            The zone is cached and refreshed automatically when it is older than 15 minutes, or on demand with <em>Refresh from OVH</em>. Host
+            states are always live. The application secret and consumer key are encrypted like every other secret and never displayed again.
           </p>
 
           <h2 id="security">Secrets &amp; security</h2>

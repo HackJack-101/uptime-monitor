@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ApiError } from './lib/api';
 import { AccountPage } from './pages/Account';
 import { DashboardPage } from './pages/Dashboard';
+import { DnsZonePage } from './pages/DnsZone';
 import { GuidePage } from './pages/Guide';
 import { LoginPage } from './pages/Login';
 import { MonitorDetailPage } from './pages/MonitorDetail';
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
       { path: 'projects', element: <ProjectsPage /> },
       { path: 'projects/:id', element: <ProjectDetailPage /> },
       { path: 'projects/:id/monitors/new', element: <MonitorFormPage /> },
+      { path: 'projects/:id/dns', element: <DnsZonePage /> },
       { path: 'monitors/:monitorId', element: <MonitorDetailPage /> },
       { path: 'monitors/:monitorId/edit', element: <MonitorFormPage /> },
       { path: 'users', element: <RequireAuth admin><UsersPage /></RequireAuth> },

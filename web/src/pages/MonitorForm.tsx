@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { Globe, KeyRound, Lock, Network, Radar, Server, Terminal } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { CheckSettingsFields, pickOverrides } from '../components/CheckSettingsFields';
 import { DynamicForm, initialConfig, secretsPayload, type SecretInput } from '../components/DynamicForm';
 import { Button, Card, CardHeader, Field, Input, PageHeader, PageLoader, Switch, useToast } from '../components/ui';
@@ -38,12 +38,15 @@ function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Pr
   const qc = useQueryClient();
   const toast = useToast();
   const navigate = useNavigate();
-  const [type, setType] = useState(monitor?.type ?? 'http');
+  const [search] = useSearchParams();
+  // Prefill from the query string, e.g. the "Monitor it" action of the DNS view.
+  const prefill = monitor ? {} : Object.fromEntries(search.entries());
+  const [type, setType] = useState(monitor?.type ?? (meta.monitorTypes.some((t) => t.type === prefill.type) ? prefill.type! : 'http'));
   const def = meta.monitorTypes.find((t) => t.type === type)!;
-  const [name, setName] = useState(monitor?.name ?? '');
+  const [name, setName] = useState(monitor?.name ?? prefill.name ?? '');
   const [enabled, setEnabled] = useState(monitor?.enabled ?? true);
   const [inherit, setInherit] = useState(monitor?.inherit_notifications ?? true);
-  const [config, setConfig] = useState(() => initialConfig(def, monitor?.config));
+  const [config, setConfig] = useState(() => initialConfig(def, monitor?.config ?? (prefill.url ? { url: prefill.url } : {})));
   const [secrets, setSecrets] = useState<SecretInput>({});
   const [settings, setSettings] = useState<CheckSettingsOverrides>(pickOverrides(monitor ?? {}));
   const [errors, setErrors] = useState<string[]>([]);

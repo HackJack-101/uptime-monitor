@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, Server } from 'lucide-react';
+import { ArrowLeft, Globe, Plus, Server } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { CheckSettingsFields, pickOverrides } from '../components/CheckSettingsFields';
 import { MonitorList } from '../components/MonitorList';
 import { ChannelsPanel, RulesPanel } from '../components/NotificationPanels';
+import { OvhSettings, useOvhAccount } from '../components/OvhSettings';
 import { Badge, Button, Card, CardHeader, ConfirmDialog, EmptyState, Field, Input, PageHeader, PageLoader, Select, Tabs, Textarea, useToast } from '../components/ui';
 import { useAuth, useMeta } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
@@ -144,6 +145,7 @@ function SettingsTab({ project }: { project: Project }) {
           </div>
         </div>
       </Card>
+      <OvhSettings projectId={project.id} />
       <Card>
         <CardHeader title="Default check rules" description="Applied to every monitor of this project unless the monitor overrides them. Leave empty to use the global default." />
         <div className="p-5">{meta.data && <CheckSettingsFields value={settings} onChange={setSettings} inherited={meta.data.defaults} inheritedFrom="global" />}</div>
@@ -179,7 +181,10 @@ function SettingsTab({ project }: { project: Project }) {
 export function ProjectDetailPage() {
   const id = Number(useParams().id);
   const { isAdmin } = useAuth();
-  const [tab, setTab] = useState<Tab>('monitors');
+  const [params, setParams] = useSearchParams();
+  const tab = (['monitors', 'notifications', 'members', 'settings'].includes(params.get('tab') ?? '') ? params.get('tab') : 'monitors') as Tab;
+  const setTab = (t: Tab) => setParams(t === 'monitors' ? {} : { tab: t }, { replace: true });
+  const ovh = useOvhAccount(id);
   const project = useQuery({ queryKey: ['project', id], queryFn: () => api.get<{ project: Project }>(`/api/projects/${id}`).then((r) => r.project) });
   const monitors = useQuery({
     queryKey: ['monitors', 'project', id],
@@ -211,13 +216,22 @@ export function ProjectDetailPage() {
         }
         description={p.description}
         actions={
-          canEdit && (
-            <Link to={`/projects/${id}/monitors/new`}>
-              <Button variant="primary" icon={<Plus className="size-4" />}>
-                Add monitor
-              </Button>
-            </Link>
-          )
+          <>
+            {ovh.data && (
+              <Link to={`/projects/${id}/dns`}>
+                <Button icon={<Globe className="size-4" />}>
+                  DNS zone <span className="font-mono text-xs text-zinc-500">{ovh.data.zone}</span>
+                </Button>
+              </Link>
+            )}
+            {canEdit && (
+              <Link to={`/projects/${id}/monitors/new`}>
+                <Button variant="primary" icon={<Plus className="size-4" />}>
+                  Add monitor
+                </Button>
+              </Link>
+            )}
+          </>
         }
       />
       <Tabs tabs={tabs} value={tab} onChange={setTab} />

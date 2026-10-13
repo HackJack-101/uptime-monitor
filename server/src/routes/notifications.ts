@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { audit, requireProject } from '../auth.js';
 import type { AppContext } from '../context.js';
 import { nowIso } from '../db.js';
-import { badRequest, notFound, paramId, parse } from '../http.js';
+import { badRequest, notFound, paramId, parse, patchSchema } from '../http.js';
 import { getChannelType } from '../registry/channels.js';
 import { mergeSecrets, parsePayload, secretPresence } from '../registry/fields.js';
 import { RULE_EVENTS, type ChannelRow, type ProjectRow, type RuleRow } from '../types.js';
@@ -108,7 +108,7 @@ export function notificationRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   app.patch('/api/channels/:id', async (req) => {
     const channel = loadChannel(req, 'edit');
-    const body = parse(channelSchema.omit({ type: true }).partial(), req.body);
+    const body = parse(patchSchema(channelSchema.omit({ type: true })), req.body);
     const def = getChannelType(channel.type)!;
     const existing = box.decryptJson(channel.secrets);
     const payload = parsePayload(def, body.config ?? JSON.parse(channel.config), body.secrets ?? {}, new Set(Object.keys(existing)));
@@ -195,7 +195,7 @@ export function notificationRoutes(app: FastifyInstance, ctx: AppContext): void 
 
   app.patch('/api/rules/:id', async (req) => {
     const rule = loadRule(req, 'edit');
-    const body = parse(ruleSchema.omit({ monitor_id: true }).partial(), req.body);
+    const body = parse(patchSchema(ruleSchema.omit({ monitor_id: true })), req.body);
     if (body.channel_ids) validateRuleRefs(rule.project_id, null, body.channel_ids);
     db.transaction(() => {
       db.run(

@@ -24,6 +24,22 @@ export function parse<T extends z.ZodType>(schema: T, data: unknown): z.infer<T>
   return result.data;
 }
 
+/**
+ * Update (PATCH) variant of a create schema: every field becomes optional and defaults are dropped,
+ * so fields missing from the request stay untouched instead of being reset to their default.
+ * (Zod 4 applies defaults even inside .partial(), which made e.g. a pause request wipe the monitor config.)
+ */
+export function patchSchema<T extends z.ZodRawShape>(schema: z.ZodObject<T>) {
+  const shape: Record<string, z.ZodType> = {};
+  for (const [key, field] of Object.entries(schema.shape)) {
+    let inner = field as z.ZodType;
+    // .nullable() is kept, so `null` can still reset a check-rule override to "inherit".
+    while (inner instanceof z.ZodDefault || inner instanceof z.ZodOptional) inner = inner.unwrap() as z.ZodType;
+    shape[key] = inner.optional();
+  }
+  return z.object(shape) as unknown as z.ZodType<Partial<z.infer<z.ZodObject<T>>>>;
+}
+
 export const idParam = z.object({ id: z.coerce.number().int().positive() });
 
 export function paramId(req: FastifyRequest): number {

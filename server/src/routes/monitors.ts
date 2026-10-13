@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { audit, currentUser, projectAccess, requireProject, visibleProjectsFilter } from '../auth.js';
 import type { AppContext } from '../context.js';
 import { nowIso } from '../db.js';
-import { badRequest, HttpError, notFound, paramId, parse } from '../http.js';
+import { badRequest, HttpError, notFound, paramId, parse, patchSchema } from '../http.js';
 import { mergeSecrets, parsePayload, secretPresence } from '../registry/fields.js';
 import { getMonitorType } from '../registry/monitors.js';
 import { resolveCheckSettings } from '../settings.js';
@@ -176,7 +176,7 @@ export function monitorRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.patch('/api/monitors/:id', async (req) => {
     const monitor = loadMonitor(paramId(req), 'edit', req);
-    const body = parse(baseSchema.partial(), req.body);
+    const body = parse(patchSchema(baseSchema), req.body);
     const type = body.type ?? monitor.type;
     const def = getMonitorType(type);
     if (!def) throw badRequest(`Unknown monitor type: ${type}`);

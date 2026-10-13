@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { audit, currentUser, isAdmin, projectAccess, requireAdmin, requireProject } from '../auth.js';
 import type { AppContext } from '../context.js';
 import { nowIso } from '../db.js';
-import { HttpError, notFound, paramId, parse } from '../http.js';
+import { HttpError, notFound, paramId, parse, patchSchema } from '../http.js';
 import { DEFAULT_CHECK_SETTINGS, resolveCheckSettings } from '../settings.js';
 import type { ProjectRow } from '../types.js';
 
@@ -100,7 +100,7 @@ export function projectRoutes(app: FastifyInstance, ctx: AppContext): void {
     const id = paramId(req);
     const project = db.get<ProjectRow>('SELECT * FROM projects WHERE id = ?', id);
     if (!project) throw notFound('Project');
-    const body = parse(projectSchema.partial(), req.body);
+    const body = parse(patchSchema(projectSchema), req.body);
     if (body.name && db.get('SELECT 1 FROM projects WHERE name = ? AND id != ?', body.name, id)) {
       throw new HttpError(409, 'A project with this name already exists');
     }

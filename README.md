@@ -23,7 +23,7 @@ It ships as a single Docker image, ready for Portainer.
 ## Quick start with Portainer
 
 1. In Portainer, go to **Stacks → Add stack** and paste the content of [`docker-compose.yml`](docker-compose.yml).
-2. Replace `OWNER` in the image name with your GitHub user or organisation (`ghcr.io/<owner>/uptime-monitor:latest`).
+2. The stack uses the image published by CI: `ghcr.io/hackjack-101/uptime-monitor:latest`.
 3. Under **Environment variables**, set at least:
    - `APP_SECRET`: a long random string (`openssl rand -base64 48`). **Keep it safe**: it encrypts every stored secret.
    - `PUBLIC_URL`: the URL you will use to reach the UI (used for links in alerts).
@@ -45,7 +45,7 @@ It ships as a single Docker image, ready for Portainer.
 docker run -d --name uptime-monitor --restart unless-stopped \
   -p 3000:3000 -v uptime-data:/data \
   -e APP_SECRET="$(openssl rand -base64 48)" \
-  ghcr.io/<owner>/uptime-monitor:latest
+  ghcr.io/hackjack-101/uptime-monitor:latest
 ```
 
 ### Behind a reverse proxy
@@ -178,7 +178,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request 
 
 1. Install, typecheck, run the tests, build.
 2. Build a multi-arch Docker image (`linux/amd64`, `linux/arm64`).
-3. On `master`, push `ghcr.io/<owner>/uptime-monitor:latest` and `:sha-<commit>`. On `vX.Y.Z` tags, also push `:X.Y.Z` and `:X.Y`.
+3. On `master`, push `ghcr.io/hackjack-101/uptime-monitor:latest` and `:sha-<commit>`. On `vX.Y.Z` tags, also push `:X.Y.Z` and `:X.Y`.
 
 To redeploy in Portainer, use **Pull and redeploy** on the stack, or enable a stack webhook.
 

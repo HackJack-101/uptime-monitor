@@ -5,7 +5,7 @@ import { daysUntil, elapsed, errorMessage, statusMatcher, type Checker } from '.
 
 const MAX_BODY = 1024 * 1024;
 const MAX_REDIRECTS = 5;
-const USER_AGENT = 'UptimeMonitor/1.0 (+https://github.com)';
+const USER_AGENT = 'UptimeMonitor/1.0 (+https://github.com/HackJack-101/uptime-monitor)';
 
 interface HttpResponse {
   status: number;

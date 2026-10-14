@@ -123,3 +123,22 @@ describe('migration 003', () => {
     reopened.close();
   });
 });
+
+describe('dashboard incidents', () => {
+  it('lists ongoing incidents and those resolved in the last 7 days only', async () => {
+    const projectId = (await call('POST', '/api/projects', { name: 'Dashboard' })).json().project.id;
+    const id = (await call('POST', '/api/monitors', { project_id: projectId, name: 'dash', type: 'tcp', config: { host: '127.0.0.1', port } })).json().monitor.id;
+    const day = 86_400_000;
+    const ago = (days: number) => new Date(Date.now() - days * day).toISOString();
+    const add = (cause: string, started: string, resolved: string | null) =>
+      ctx.db.run('INSERT INTO incidents (monitor_id, cause, started_at, resolved_at) VALUES (?, ?, ?, ?)', id, cause, started, resolved);
+    add('old-ongoing', ago(30), null);
+    add('old-resolved', ago(10), ago(9));
+    add('recent-resolved', ago(2), ago(1));
+
+    const res = await app.inject({ method: 'GET', url: '/api/dashboard', headers: { cookie } });
+    const causes = (res.json().incidents as { cause: string; monitor_id: number }[]).filter((i) => i.monitor_id === id).map((i) => i.cause);
+    expect(causes).toEqual(['old-ongoing', 'recent-resolved']);
+    expect(res.json().incidentWindowDays).toBe(7);
+  });
+});

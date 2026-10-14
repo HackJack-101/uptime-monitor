@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { Activity, CircleCheck, CircleX, Clock, FolderKanban, Gauge, TriangleAlert } from 'lucide-react';
+import { Activity, ChevronDown, ChevronUp, CircleCheck, CircleX, Clock, FolderKanban, Gauge, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { MonitorList } from '../components/MonitorList';
-import { Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader } from '../components/ui';
+import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
 import { duration, ms, pct, timeAgo } from '../lib/format';
@@ -16,7 +16,11 @@ interface DashboardData {
   avgLatency24h: number | null;
   projectCount: number;
   incidents: Incident[];
+  incidentWindowDays: number;
 }
+
+/** Resolved incidents shown before "Show more" (ongoing ones are always listed). */
+const RESOLVED_PREVIEW = 5;
 
 function Stat({ label, value, icon, tone }: { label: string; value: React.ReactNode; icon: React.ReactNode; tone: string }) {
   return (
@@ -34,6 +38,7 @@ export function DashboardPage() {
   const { user, isAdmin } = useAuth();
   const [filter, setFilter] = useState<'all' | 'problems'>('all');
   const [search, setSearch] = useState('');
+  const [allIncidents, setAllIncidents] = useState(false);
   const dashboard = useQuery({ queryKey: ['dashboard'], queryFn: () => api.get<DashboardData>('/api/dashboard'), refetchInterval: 15_000 });
   const monitors = useQuery({ queryKey: ['monitors', 'all'], queryFn: () => api.get<{ monitors: Monitor[] }>('/api/monitors').then((r) => r.monitors), refetchInterval: 15_000 });
 
@@ -49,6 +54,9 @@ export function DashboardPage() {
   const c = d.statusCounts;
   const total = Object.values(c).reduce((a, b) => a + (b ?? 0), 0);
   const problems = (c.down ?? 0) + (c.degraded ?? 0);
+  const ongoing = d.incidents.filter((i) => !i.resolved_at);
+  const resolved = d.incidents.filter((i) => i.resolved_at);
+  const visibleResolved = allIncidents ? resolved : resolved.slice(0, RESOLVED_PREVIEW);
 
   return (
     <>
@@ -114,31 +122,54 @@ export function DashboardPage() {
           )}
         </Card>
 
-        <Card>
-          <CardHeader title="Recent incidents" />
+        <Card className="flex flex-col self-start overflow-hidden">
+          <CardHeader
+            title="Recent incidents"
+            description={`Ongoing and resolved in the last ${d.incidentWindowDays} days`}
+            actions={ongoing.length > 0 && <Badge tone="red">{ongoing.length} ongoing</Badge>}
+          />
           {d.incidents.length === 0 ? (
-            <EmptyState icon={<CircleCheck className="size-5" />} title="No incidents" description="Outages will show up here." />
+            <EmptyState icon={<CircleCheck className="size-5" />} title="No incidents" description={`Nothing in the last ${d.incidentWindowDays} days.`} />
           ) : (
-            <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-              {d.incidents.map((i) => (
-                <li key={i.id}>
-                  <Link to={`/monitors/${i.monitor_id}`} className="block px-5 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium">{i.monitor_name}</span>
-                      {i.resolved_at ? (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400">Resolved</span>
-                      ) : (
-                        <span className="text-xs font-medium text-rose-600 dark:text-rose-400">Ongoing</span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-zinc-500">{i.cause}</p>
-                    <p className="mt-1 flex items-center gap-1 text-xs text-zinc-400">
-                      <Clock className="size-3" /> {timeAgo(i.started_at)} · lasted {duration(i.started_at, i.resolved_at)}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className={clsx('divide-y divide-zinc-100 dark:divide-zinc-800/80', allIncidents && 'max-h-[32rem] overflow-y-auto')}>
+                {[...ongoing, ...visibleResolved].map((i) => (
+                  <li key={i.id}>
+                    <Link to={`/monitors/${i.monitor_id}`} className="block px-5 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-sm font-medium">{i.monitor_name}</span>
+                        {i.resolved_at ? (
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400">Resolved</span>
+                        ) : (
+                          <span className="text-xs font-medium text-rose-600 dark:text-rose-400">Ongoing</span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">{i.cause}</p>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-zinc-400">
+                        <Clock className="size-3" /> {timeAgo(i.started_at)} · lasted {duration(i.started_at, i.resolved_at)}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {resolved.length > RESOLVED_PREVIEW && (
+                <button
+                  type="button"
+                  onClick={() => setAllIncidents((v) => !v)}
+                  className="flex w-full items-center justify-center gap-1 border-t border-zinc-100 px-5 py-3 text-xs font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-800/80 dark:hover:bg-zinc-800/30 dark:hover:text-zinc-300"
+                >
+                  {allIncidents ? (
+                    <>
+                      Show less <ChevronUp className="size-3.5" />
+                    </>
+                  ) : (
+                    <>
+                      Show {resolved.length - RESOLVED_PREVIEW} more <ChevronDown className="size-3.5" />
+                    </>
+                  )}
+                </button>
+              )}
+            </>
           )}
         </Card>
       </div>

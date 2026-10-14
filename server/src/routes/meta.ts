@@ -8,6 +8,10 @@ import { monitorTypes } from '../registry/monitors.js';
 import { DEFAULT_CHECK_SETTINGS } from '../settings.js';
 import { RULE_EVENTS } from '../types.js';
 
+/** Dashboard incidents: every ongoing one, plus those resolved within the window (capped). */
+const INCIDENT_WINDOW_DAYS = 7;
+const INCIDENT_LIMIT = 50;
+
 export function metaRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
 
@@ -45,8 +49,10 @@ export function metaRoutes(app: FastifyInstance, ctx: AppContext): void {
     const incidents = db.all(
       `SELECT i.*, m.name AS monitor_name, m.project_id, p.name AS project_name, p.color AS project_color
        FROM incidents i JOIN monitors m ON m.id = i.monitor_id JOIN projects p ON p.id = m.project_id
-       WHERE ${fm.sql} ORDER BY i.resolved_at IS NOT NULL, i.started_at DESC LIMIT 15`,
+       WHERE ${fm.sql} AND (i.resolved_at IS NULL OR i.resolved_at >= ?)
+       ORDER BY i.resolved_at IS NOT NULL, i.started_at DESC LIMIT ${INCIDENT_LIMIT}`,
       ...fm.params,
+      new Date(Date.now() - INCIDENT_WINDOW_DAYS * 86_400_000).toISOString(),
     );
     const projectCount = db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM projects WHERE ${f.sql.replace('project_id', 'id')}`, ...f.params);
     return {
@@ -55,6 +61,7 @@ export function metaRoutes(app: FastifyInstance, ctx: AppContext): void {
       avgLatency24h: uptime?.latency ? Math.round(uptime.latency) : null,
       projectCount: projectCount?.n ?? 0,
       incidents,
+      incidentWindowDays: INCIDENT_WINDOW_DAYS,
     };
   });
 }

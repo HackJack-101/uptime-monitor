@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import { CircleCheck, CircleDashed, CircleX, Globe, Plus, RefreshCw, Search, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader, StatusDot, useToast } from '../components/ui';
+import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader, QueryError, StatusDot, useToast } from '../components/ui';
 import { api, ApiError, errorText } from '../lib/api';
 import { timeAgo } from '../lib/format';
 import { projectQuery } from '../lib/queries';
@@ -142,7 +142,8 @@ export function DnsZonePage() {
       </>
     );
   }
-  const d = dns.data!;
+  if (!dns.data) return <QueryError error={dns.error} onRetry={() => void dns.refetch()} />;
+  const d = dns.data;
   const s = d.summary;
 
   const stats = [

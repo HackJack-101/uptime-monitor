@@ -4,7 +4,7 @@ import { Activity, ChevronDown, ChevronUp, CircleCheck, CircleX, Clock, FolderKa
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { MonitorList } from '../components/MonitorList';
-import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader } from '../components/ui';
+import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader, QueryError } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
 import { duration, ms, pct, timeAgo } from '../lib/format';
@@ -50,7 +50,18 @@ export function DashboardPage() {
   }, [monitors.data, filter, search]);
 
   if (dashboard.isLoading || monitors.isLoading) return <PageLoader />;
-  const d = dashboard.data!;
+  if (!dashboard.data || !monitors.data) {
+    return (
+      <QueryError
+        error={dashboard.error ?? monitors.error}
+        onRetry={() => {
+          void dashboard.refetch();
+          void monitors.refetch();
+        }}
+      />
+    );
+  }
+  const d = dashboard.data;
   const c = d.statusCounts;
   const total = Object.values(c).reduce((a, b) => a + (b ?? 0), 0);
   const problems = (c.down ?? 0) + (c.degraded ?? 0);

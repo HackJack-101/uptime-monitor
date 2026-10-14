@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Eye, EyeOff, Loader2, X } from 'lucide-react';
+import { CloudOff, Eye, EyeOff, Loader2, X } from 'lucide-react';
 import {
   createContext,
   forwardRef,
@@ -15,6 +15,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
+import { errorText } from '../lib/api';
 import { STATUS_COLOR, STATUS_LABEL } from '../lib/format';
 import type { MonitorStatus } from '../lib/types';
 
@@ -185,6 +186,20 @@ export function EmptyState({ icon, title, description, action }: { icon: ReactNo
       {description && <p className="mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">{description}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
+  );
+}
+
+/** Shown instead of a page whose data failed to load (server unreachable, error, expired session…). */
+export function QueryError({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  return (
+    <Card>
+      <EmptyState
+        icon={<CloudOff className="size-5" />}
+        title="Unable to load this page"
+        description={errorText(error)}
+        action={<Button onClick={onRetry}>Retry</Button>}
+      />
+    </Card>
   );
 }
 

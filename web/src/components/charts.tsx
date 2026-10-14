@@ -1,5 +1,6 @@
 import clsx from 'clsx';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { getLocale, t } from '../i18n';
 import { dateTime, STATUS_COLOR, STATUS_LABEL } from '../lib/format';
 import type { Heartbeat, MonitorStatus } from '../lib/types';
 
@@ -11,7 +12,7 @@ export function HeartbeatBar({ beats, slots = 30, className }: { beats: Heartbea
       {padded.map((b, i) => (
         <div
           key={i}
-          title={b ? `${STATUS_LABEL[b.status]} · ${b.latency_ms ?? '—'} ms · ${dateTime(b.checked_at)}` : 'No data'}
+          title={b ? `${STATUS_LABEL[b.status]} · ${b.latency_ms ?? '—'} ms · ${dateTime(b.checked_at)}` : t('chart.noDataSlot')}
           className={clsx(
             'min-w-px flex-1 rounded-full transition-opacity hover:opacity-70',
             b ? STATUS_COLOR[b.status as MonitorStatus] : 'bg-zinc-200 dark:bg-zinc-800',
@@ -44,8 +45,8 @@ function niceScale(max: number, maxTicks: number): { top: number; step: number }
 }
 
 function formatLatency(v: number): string {
-  if (v >= 1000) return `${+(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)} s`;
-  return `${Math.round(v)} ms`;
+  if (v >= 1000) return `${(v / 1000).toLocaleString(getLocale(), { maximumFractionDigits: 1 })} s`;
+  return `${Math.round(v).toLocaleString(getLocale())} ms`;
 }
 
 function useWidth<T extends HTMLElement>() {
@@ -129,9 +130,9 @@ export function LatencyChart({
     const withDate = stepMs >= DAY || rangeHours > 24;
     const label = (t: number) => {
       const d = new Date(t);
-      if (stepMs >= DAY) return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-      const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-      return withDate && d.getHours() === 0 ? d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : time;
+      if (stepMs >= DAY) return d.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' });
+      const time = d.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
+      return withDate && d.getHours() === 0 ? d.toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' }) : time;
     };
 
     const bandW = Math.max(2, (bucketSeconds * 1000 * innerW) / (end - start));
@@ -143,7 +144,7 @@ export function LatencyChart({
   return (
     <div ref={ref} className="relative" style={{ height }}>
       {points.length === 0 ? (
-        <div className="flex h-full items-center justify-center text-sm text-zinc-400">No data yet for this period</div>
+        <div className="flex h-full items-center justify-center text-sm text-zinc-400">{t('chart.noData')}</div>
       ) : (
         width > 0 && (
           <svg
@@ -230,11 +231,11 @@ export function LatencyChart({
         >
           <div className="font-medium">
             {hovered.latency_ms !== null ? formatLatency(hovered.latency_ms) : STATUS_LABEL[hovered.status]}
-            {!!hovered.failures && <span className="ml-1.5 text-rose-300 dark:text-rose-600">· {hovered.failures} failed</span>}
+            {!!hovered.failures && <span className="ml-1.5 text-rose-300 dark:text-rose-600">· {t('chart.failed', hovered.failures)}</span>}
           </div>
           <div className="opacity-70">
             {dateTime(hovered.checked_at)}
-            {hovered.checks && hovered.checks > 1 ? ` · avg of ${hovered.checks} checks` : ''}
+            {hovered.checks && hovered.checks > 1 ? ` · ${t('chart.avgOf', hovered.checks)}` : ''}
           </div>
         </div>
       )}

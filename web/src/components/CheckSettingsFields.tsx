@@ -1,13 +1,14 @@
+import { t, type MessageKey } from '../i18n';
 import { seconds } from '../lib/format';
 import type { CheckSettingsOverrides, EffectiveSettings } from '../lib/types';
 import { Field, Input } from './ui';
 
-const FIELDS: { key: keyof CheckSettingsOverrides; inherit: keyof EffectiveSettings; label: string; unit: string; help: string; min: number; max: number }[] = [
-  { key: 'interval_s', inherit: 'intervalS', label: 'Check interval', unit: 's', help: 'Time between two checks.', min: 20, max: 86400 },
-  { key: 'timeout_s', inherit: 'timeoutS', label: 'Timeout', unit: 's', help: 'A check slower than this fails.', min: 1, max: 120 },
-  { key: 'retries', inherit: 'retries', label: 'Retries', unit: '', help: 'Failed checks tolerated before marking DOWN.', min: 0, max: 10 },
-  { key: 'retry_interval_s', inherit: 'retryIntervalS', label: 'Retry interval', unit: 's', help: 'Delay between retries while failing.', min: 10, max: 3600 },
-  { key: 'degraded_threshold_ms', inherit: 'degradedThresholdMs', label: 'Degraded above', unit: 'ms', help: 'Response time that marks the service as DEGRADED.', min: 1, max: 120000 },
+const FIELDS: { key: keyof CheckSettingsOverrides; inherit: keyof EffectiveSettings; label: MessageKey; unit: string; help: MessageKey; min: number; max: number }[] = [
+  { key: 'interval_s', inherit: 'intervalS', label: 'checkSettings.interval', unit: 's', help: 'checkSettings.intervalHelp', min: 20, max: 86400 },
+  { key: 'timeout_s', inherit: 'timeoutS', label: 'checkSettings.timeout', unit: 's', help: 'checkSettings.timeoutHelp', min: 1, max: 120 },
+  { key: 'retries', inherit: 'retries', label: 'checkSettings.retries', unit: '', help: 'checkSettings.retriesHelp', min: 0, max: 10 },
+  { key: 'retry_interval_s', inherit: 'retryIntervalS', label: 'checkSettings.retryInterval', unit: 's', help: 'checkSettings.retryIntervalHelp', min: 10, max: 3600 },
+  { key: 'degraded_threshold_ms', inherit: 'degradedThresholdMs', label: 'checkSettings.degraded', unit: 'ms', help: 'checkSettings.degradedHelp', min: 1, max: 120000 },
 ];
 
 /** Editable check rules. Empty field = inherit from the parent scope (shown as placeholder). */
@@ -27,9 +28,9 @@ export function CheckSettingsFields({
       {FIELDS.map((f) => {
         const parent = inherited[f.inherit];
         const placeholder =
-          parent === null ? 'Disabled' : f.unit === 's' ? `${seconds(parent as number)} (${inheritedFrom})` : `${parent}${f.unit ? ` ${f.unit}` : ''} (${inheritedFrom})`;
+          parent === null ? t('common.disabled') : f.unit === 's' ? `${seconds(parent as number)} (${inheritedFrom})` : `${parent}${f.unit ? ` ${f.unit}` : ''} (${inheritedFrom})`;
         return (
-          <Field key={f.key} label={`${f.label}${f.unit ? ` (${f.unit})` : ''}`} help={f.help} htmlFor={`cs-${f.key}`}>
+          <Field key={f.key} label={`${t(f.label)}${f.unit ? ` (${f.unit})` : ''}`} help={t(f.help)} htmlFor={`cs-${f.key}`}>
             <Input
               id={`cs-${f.key}`}
               type="number"

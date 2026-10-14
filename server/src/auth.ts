@@ -12,6 +12,7 @@ export interface SessionUser {
   email: string;
   name: string;
   role: Role;
+  locale: string | null;
 }
 
 declare module 'fastify' {
@@ -70,7 +71,7 @@ export function registerAuth(app: FastifyInstance, db: Database): void {
         nowIso(),
       );
       if (row) {
-        req.user = { id: row.id, email: row.email, name: row.name, role: row.role };
+        req.user = { id: row.id, email: row.email, name: row.name, role: row.role, locale: row.locale };
         req.sessionId = id;
       }
     }

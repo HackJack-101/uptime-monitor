@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router';
 import { Badge, Button, Card, EmptyState, Field, Input, Modal, PageHeader, PageLoader, Textarea, useToast } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
+import { t } from '../i18n';
 import type { Project } from '../lib/types';
 
 export const PROJECT_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6', '#14b8a6', '#64748b'];
@@ -17,7 +18,7 @@ export function ColorPicker({ value, onChange }: { value: string; onChange: (c: 
           key={c}
           type="button"
           onClick={() => onChange(c)}
-          aria-label={`Color ${c}`}
+          aria-label={t('projects.colorAria', c)}
           className="size-7 rounded-full ring-offset-2 ring-offset-white transition-transform hover:scale-110 dark:ring-offset-zinc-900"
           style={{ background: c, boxShadow: value === c ? `0 0 0 2px ${c}` : undefined }}
         />
@@ -37,7 +38,7 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
     mutationFn: () => api.post<{ project: Project }>('/api/projects', { name, description, color }),
     onSuccess: ({ project }) => {
       qc.invalidateQueries({ queryKey: ['projects'] });
-      toast('Project created');
+      toast(t('projects.created'));
       navigate(`/projects/${project.id}`);
     },
     onError: (e) => toast(errorText(e), 'error'),
@@ -46,25 +47,25 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
     <Modal
       open
       onClose={onClose}
-      title="New project"
-      description="Projects group monitors, notification channels and members."
+      title={t('projects.new')}
+      description={t('projects.newDescription')}
       footer={
         <>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="primary" onClick={() => create.mutate()} loading={create.isPending} disabled={!name.trim()}>
-            Create project
+            {t('projects.create')}
           </Button>
         </>
       }
     >
       <form className="space-y-4" onSubmit={(e) => (e.preventDefault(), create.mutate())}>
-        <Field label="Name" required htmlFor="p-name">
-          <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Production" />
+        <Field label={t('common.name')} required htmlFor="p-name">
+          <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('projects.namePlaceholder')} />
         </Field>
-        <Field label="Description" htmlFor="p-desc">
+        <Field label={t('common.description')} htmlFor="p-desc">
           <Textarea id="p-desc" value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-16 font-sans sm:text-sm" />
         </Field>
-        <Field label="Color">
+        <Field label={t('common.color')}>
           <ColorPicker value={color} onChange={setColor} />
         </Field>
         <button type="submit" hidden />
@@ -84,12 +85,12 @@ export function ProjectsPage() {
   return (
     <>
       <PageHeader
-        title="Projects"
-        description="Each web service belongs to exactly one project."
+        title={t('projects.title')}
+        description={t('projects.description')}
         actions={
           isAdmin && (
             <Button variant="primary" icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>
-              New project
+              {t('projects.new')}
             </Button>
           )
         }
@@ -98,9 +99,9 @@ export function ProjectsPage() {
         <Card>
           <EmptyState
             icon={<FolderKanban className="size-5" />}
-            title="No projects"
-            description={isAdmin ? 'Create your first project to start monitoring.' : 'You are not assigned to any project yet.'}
-            action={isAdmin && <Button variant="primary" onClick={() => setCreating(true)}>Create project</Button>}
+            title={t('projects.empty')}
+            description={isAdmin ? t('projects.emptyAdmin') : t('projects.emptyUser')}
+            action={isAdmin && <Button variant="primary" onClick={() => setCreating(true)}>{t('projects.create')}</Button>}
           />
         </Card>
       ) : (
@@ -115,9 +116,9 @@ export function ProjectsPage() {
                     <span className="mt-1 size-3 shrink-0 rounded" style={{ background: p.color }} />
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate font-semibold">{p.name}</h3>
-                      <p className="mt-0.5 line-clamp-2 min-h-[2.5em] text-sm text-zinc-500 dark:text-zinc-400">{p.description || 'No description'}</p>
+                      <p className="mt-0.5 line-clamp-2 min-h-[2.5em] text-sm text-zinc-500 dark:text-zinc-400">{p.description || t('projects.noDescription')}</p>
                     </div>
-                    {p.access === 'view' && <Badge>Read-only</Badge>}
+                    {p.access === 'view' && <Badge>{t('common.readOnly')}</Badge>}
                   </div>
                   <div className="mt-4 flex h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                     {total > 0 &&
@@ -133,8 +134,8 @@ export function ProjectsPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
                     <span>
-                      {total} monitor{total === 1 ? '' : 's'}
-                      {(s.down ?? 0) > 0 && <span className="ml-2 font-medium text-rose-600 dark:text-rose-400">{s.down} down</span>}
+                      {t('projects.monitorCount', total)}
+                      {(s.down ?? 0) > 0 && <span className="ml-2 font-medium text-rose-600 dark:text-rose-400">{t('projects.downCount', s.down ?? 0)}</span>}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Users className="size-3.5" /> {p.memberCount ?? 0}

@@ -5,6 +5,7 @@ import { createBrowserRouter, Link, Navigate, RouterProvider, useLocation } from
 import { Layout } from './components/Layout';
 import { Button, EmptyState, PageLoader, ToastProvider } from './components/ui';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { I18nProvider, t } from './i18n';
 import { ApiError } from './lib/api';
 import { AccountPage } from './pages/Account';
 import { DashboardPage } from './pages/Dashboard';
@@ -42,11 +43,11 @@ function NotFound() {
   return (
     <EmptyState
       icon={<Compass className="size-5" />}
-      title="Page not found"
-      description="The page you are looking for does not exist."
+      title={t('notFound.title')}
+      description={t('notFound.description')}
       action={
         <Link to="/">
-          <Button variant="primary">Back to dashboard</Button>
+          <Button variant="primary">{t('notFound.back')}</Button>
         </Link>
       }
     />
@@ -82,9 +83,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
+        <I18nProvider>
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
+        </I18nProvider>
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

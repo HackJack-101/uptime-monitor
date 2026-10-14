@@ -83,6 +83,22 @@ describe('authentication', () => {
   });
 });
 
+describe('profile', () => {
+  it('stores the interface language per user', async () => {
+    const me = as(superCookie);
+    expect((await me.get('/api/auth/me')).json().user.locale).toBeNull();
+    const res = await me.patch('/api/auth/me', { locale: 'fr-FR' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().user).toMatchObject({ locale: 'fr-FR', name: 'Root' });
+    expect((await me.get('/api/auth/me')).json().user.locale).toBe('fr-FR');
+    expect((await me.patch('/api/auth/me', { locale: 'de-DE' })).statusCode).toBe(400);
+    await me.patch('/api/auth/me', { name: 'Root Admin' });
+    expect((await me.get('/api/auth/me')).json().user).toMatchObject({ locale: 'fr-FR', name: 'Root Admin' });
+    await me.patch('/api/auth/me', { locale: null, name: 'Root' });
+    expect((await me.get('/api/auth/me')).json().user.locale).toBeNull();
+  });
+});
+
 describe('roles, projects and secrets', () => {
   let adminCookie: string;
   let userCookie: string;

@@ -4,6 +4,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { Button, Field, Input, PasswordInput } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
+import { t } from '../i18n';
 import { api, errorText } from '../lib/api';
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: ReactNode; children: ReactNode }) {
@@ -55,17 +56,17 @@ export function LoginPage() {
   };
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to your monitoring dashboard">
+    <AuthShell title={t('login.title')} subtitle={t('login.subtitle')}>
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Email" htmlFor="email">
+        <Field label={t('common.email')} htmlFor="email">
           <Input id="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />
         </Field>
-        <Field label="Password" htmlFor="password">
+        <Field label={t('common.password')} htmlFor="password">
           <PasswordInput id="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
         {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">{error}</p>}
         <Button type="submit" variant="primary" className="w-full" loading={loading}>
-          Sign in
+          {t('login.submit')}
         </Button>
       </form>
     </AuthShell>

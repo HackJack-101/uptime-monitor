@@ -1,3 +1,5 @@
+import { t, tServer } from '../i18n';
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -34,7 +36,11 @@ export const api = {
   del: <T>(url: string) => request<T>('DELETE', url),
 };
 
+/** User-facing error message, translated when the server text is known. */
 export function errorText(err: unknown): string {
-  if (err instanceof ApiError) return err.details?.length ? `${err.message}: ${err.details.join(' · ')}` : err.message;
-  return err instanceof Error ? err.message : 'Something went wrong';
+  if (err instanceof ApiError) {
+    const message = tServer(err.message);
+    return err.details?.length ? `${message}: ${err.details.map((d) => tServer(d)).join(' · ')}` : message;
+  }
+  return err instanceof Error ? tServer(err.message) : t('common.genericError');
 }

@@ -4,6 +4,7 @@ import { Activity, BookOpen, FolderKanban, LayoutDashboard, LogOut, Menu, Monito
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth, useMeta } from '../hooks/useAuth';
+import { t } from '../i18n';
 import { api } from '../lib/api';
 import { applyTheme, getTheme, type Theme } from '../lib/theme';
 import type { Meta } from '../lib/types';
@@ -11,12 +12,12 @@ import type { Meta } from '../lib/types';
 function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>(getTheme());
   const options: { value: Theme; icon: typeof Sun; label: string }[] = [
-    { value: 'light', icon: Sun, label: 'Light' },
-    { value: 'system', icon: Monitor, label: 'System' },
-    { value: 'dark', icon: Moon, label: 'Dark' },
+    { value: 'light', icon: Sun, label: t('theme.light') },
+    { value: 'system', icon: Monitor, label: t('theme.system') },
+    { value: 'dark', icon: Moon, label: t('theme.dark') },
   ];
   return (
-    <div className="flex rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800/80" role="radiogroup" aria-label="Theme">
+    <div className="flex rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800/80" role="radiogroup" aria-label={t('theme.label')}>
       {options.map(({ value, icon: Icon, label }) => (
         <button
           key={value}
@@ -55,7 +56,7 @@ function BuildInfo({ meta }: { meta: Meta }) {
         <>
           <span aria-hidden>·</span>
           {meta.commitUrl ? (
-            <a href={meta.commitUrl} target="_blank" rel="noreferrer noopener" className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-200" aria-label={`Commit ${meta.commit}`}>
+            <a href={meta.commitUrl} target="_blank" rel="noreferrer noopener" className="hover:text-zinc-700 hover:underline dark:hover:text-zinc-200" aria-label={t('layout.commit', meta.commit ?? '')}>
               {sha}
             </a>
           ) : (
@@ -100,18 +101,18 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
       </div>
       <nav className="flex flex-1 flex-col gap-1">
         <NavItem to="/" icon={LayoutDashboard} end>
-          Dashboard
+          {t('nav.dashboard')}
         </NavItem>
         <NavItem to="/projects" icon={FolderKanban}>
-          Projects
+          {t('nav.projects')}
         </NavItem>
         {isAdmin && (
           <NavItem to="/users" icon={Users}>
-            Users
+            {t('nav.users')}
           </NavItem>
         )}
         <NavItem to="/guide" icon={BookOpen}>
-          Guide
+          {t('nav.guide')}
         </NavItem>
       </nav>
       <div className="space-y-3">
@@ -121,15 +122,15 @@ function Sidebar({ onLogout }: { onLogout: () => void }) {
             <UserCircle className="size-7 shrink-0 text-zinc-400" strokeWidth={1.5} />
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">{user?.name}</div>
-              <div className="truncate text-xs text-zinc-500 capitalize">{user?.role}</div>
+              <div className="truncate text-xs text-zinc-500">{user && t(`role.${user.role}`)}</div>
             </div>
           </NavLink>
           <button
             type="button"
             onClick={onLogout}
             className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-            aria-label="Sign out"
-            title="Sign out"
+            aria-label={t('layout.signOut')}
+            title={t('layout.signOut')}
           >
             <LogOut className="size-4" />
           </button>
@@ -170,7 +171,7 @@ export function Layout() {
           </div>
           <span className="font-semibold tracking-tight">Uptime Monitor</span>
         </div>
-        <button type="button" onClick={() => setOpen(true)} className="-mr-2 rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Open menu">
+        <button type="button" onClick={() => setOpen(true)} className="-mr-2 rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label={t('layout.openMenu')}>
           <Menu className="size-5" />
         </button>
         </div>
@@ -181,7 +182,7 @@ export function Layout() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 animate-fade-in bg-zinc-950/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <aside className="pt-safe pb-safe absolute inset-y-0 left-0 w-72 max-w-[85vw] animate-slide-up bg-white pl-[env(safe-area-inset-left)] shadow-2xl dark:bg-zinc-900">
-            <button type="button" onClick={() => setOpen(false)} className="absolute top-4 right-3 rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Close menu">
+            <button type="button" onClick={() => setOpen(false)} className="absolute top-4 right-3 rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label={t('layout.closeMenu')}>
               <X className="size-4" />
             </button>
             <Sidebar onLogout={logout} />

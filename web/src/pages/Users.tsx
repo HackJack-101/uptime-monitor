@@ -3,6 +3,7 @@ import { Pencil, Plus, ShieldCheck, Trash2, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { Badge, Button, Card, CardHeader, ConfirmDialog, Field, Input, Modal, PageHeader, PageLoader, PasswordInput, Select, Switch, Tabs, useToast } from '../components/ui';
 import { useAuth } from '../hooks/useAuth';
+import { t } from '../i18n';
 import { api, errorText } from '../lib/api';
 import { dateTime, timeAgo } from '../lib/format';
 import type { ManagedUser, MemberRole, Project, Role } from '../lib/types';
@@ -34,7 +35,7 @@ function UserEditor({ user, projects, onClose }: { user?: ManagedUser; projects:
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
       qc.invalidateQueries({ queryKey: ['projects'] });
-      toast(user ? 'User updated' : 'User created');
+      toast(user ? t('users.updated') : t('users.created'));
       onClose();
     },
     onError: (e) => toast(errorText(e), 'error'),
@@ -45,41 +46,41 @@ function UserEditor({ user, projects, onClose }: { user?: ManagedUser; projects:
       open
       onClose={onClose}
       size="lg"
-      title={user ? `Edit ${user.name}` : 'New user'}
+      title={user ? t('users.editTitle', user.name) : t('users.new')}
       footer={
         <>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="primary" onClick={() => save.mutate()} loading={save.isPending}>
-            Save user
+            {t('users.save')}
           </Button>
         </>
       }
     >
       <form className="space-y-5" onSubmit={(e) => (e.preventDefault(), save.mutate())}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Name" required htmlFor="u-name">
+          <Field label={t('common.name')} required htmlFor="u-name">
             <Input id="u-name" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Email" required htmlFor="u-email">
+          <Field label={t('common.email')} required htmlFor="u-email">
             <Input id="u-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" />
           </Field>
-          <Field label={user ? 'New password' : 'Password'} required={!user} help={user ? 'Leave empty to keep the current password. Changing it signs the user out.' : 'At least 10 characters.'} htmlFor="u-pass">
+          <Field label={user ? t('users.newPassword') : t('common.password')} required={!user} help={user ? t('users.newPasswordHelp') : t('common.passwordHelp')} htmlFor="u-pass">
             <PasswordInput id="u-pass" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
           </Field>
-          <Field label="Role" htmlFor="u-role" help={role === 'admin' ? 'Admins manage all projects and users.' : 'Users only access the projects assigned below.'}>
+          <Field label={t('users.role')} htmlFor="u-role" help={role === 'admin' ? t('users.roleAdminHelp') : t('users.roleUserHelp')}>
             <Select id="u-role" value={isSuper ? 'superadmin' : role} disabled={isSelf || isSuper || !isSuperadmin} onChange={(e) => setRole(e.target.value as 'admin' | 'user')}>
-              {isSuper && <option value="superadmin">Superadmin</option>}
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
+              {isSuper && <option value="superadmin">{t('role.superadmin')}</option>}
+              <option value="user">{t('role.user')}</option>
+              <option value="admin">{t('role.admin')}</option>
             </Select>
           </Field>
         </div>
-        {user && !isSelf && !isSuper && <Switch checked={active} onChange={setActive} label="Active" description="Inactive users cannot sign in." />}
+        {user && !isSelf && !isSuper && <Switch checked={active} onChange={setActive} label={t('common.active')} description={t('users.activeHelp')} />}
         {role === 'user' && !isSuper && (
           <div>
-            <h4 className="mb-2 text-sm font-medium">Project access</h4>
+            <h4 className="mb-2 text-sm font-medium">{t('users.projectAccess')}</h4>
             {projects.length === 0 ? (
-              <p className="text-sm text-zinc-500">No project exists yet.</p>
+              <p className="text-sm text-zinc-500">{t('users.noProjectExists')}</p>
             ) : (
               <ul className="divide-y divide-zinc-100 rounded-xl ring-1 ring-zinc-200 dark:divide-zinc-800 dark:ring-zinc-800">
                 {projects.map((p) => (
@@ -96,9 +97,9 @@ function UserEditor({ user, projects, onClose }: { user?: ManagedUser; projects:
                         setMemberships(next);
                       }}
                     >
-                      <option value="">No access</option>
-                      <option value="viewer">Viewer</option>
-                      <option value="editor">Editor</option>
+                      <option value="">{t('common.noAccess')}</option>
+                      <option value="viewer">{t('memberRole.viewer')}</option>
+                      <option value="editor">{t('memberRole.editor')}</option>
                     </Select>
                   </li>
                 ))}
@@ -120,16 +121,16 @@ function AuditLog() {
   if (audit.isLoading) return <PageLoader />;
   return (
     <Card>
-      <CardHeader title="Audit log" description="The last 200 security-relevant actions." />
+      <CardHeader title={t('audit.title')} description={t('audit.description')} />
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-zinc-500">
-              <th className="px-5 py-2 font-medium">When</th>
-              <th className="px-5 py-2 font-medium">Who</th>
-              <th className="px-5 py-2 font-medium">Action</th>
-              <th className="hidden px-5 py-2 font-medium md:table-cell">Target</th>
-              <th className="hidden px-5 py-2 font-medium lg:table-cell">IP</th>
+              <th className="px-5 py-2 font-medium">{t('audit.when')}</th>
+              <th className="px-5 py-2 font-medium">{t('audit.who')}</th>
+              <th className="px-5 py-2 font-medium">{t('audit.action')}</th>
+              <th className="hidden px-5 py-2 font-medium md:table-cell">{t('audit.target')}</th>
+              <th className="hidden px-5 py-2 font-medium lg:table-cell">{t('audit.ip')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
@@ -163,7 +164,7 @@ export function UsersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
       setDeleting(null);
-      toast('User deleted');
+      toast(t('users.deleted'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -175,20 +176,20 @@ export function UsersPage() {
   return (
     <>
       <PageHeader
-        title="Users"
-        description="One superadmin, admins with full access, and users scoped to projects."
+        title={t('users.title')}
+        description={t('users.description')}
         actions={
           tab === 'users' && (
             <Button variant="primary" icon={<Plus className="size-4" />} onClick={() => setEditing('new')}>
-              New user
+              {t('users.new')}
             </Button>
           )
         }
       />
       <Tabs
         tabs={[
-          { value: 'users', label: 'Users' },
-          { value: 'audit', label: 'Audit log' },
+          { value: 'users', label: t('users.tabUsers') },
+          { value: 'audit', label: t('users.tabAudit') },
         ]}
         value={tab}
         onChange={setTab}
@@ -208,28 +209,28 @@ export function UsersPage() {
                     <span className="font-medium">{u.name}</span>
                     {u.role === 'superadmin' && (
                       <Badge tone="brand">
-                        <ShieldCheck className="size-3" /> Superadmin
+                        <ShieldCheck className="size-3" /> {t('role.superadmin')}
                       </Badge>
                     )}
-                    {u.role === 'admin' && <Badge tone="brand">Admin</Badge>}
+                    {u.role === 'admin' && <Badge tone="brand">{t('role.admin')}</Badge>}
                     {!u.active && (
                       <Badge tone="red">
-                        <UserX className="size-3" /> Inactive
+                        <UserX className="size-3" /> {t('users.inactive')}
                       </Badge>
                     )}
-                    {u.id === me?.id && <Badge>You</Badge>}
+                    {u.id === me?.id && <Badge>{t('users.you')}</Badge>}
                   </div>
                   <div className="mt-0.5 truncate text-xs text-zinc-500">
-                    {u.email} · last sign-in {timeAgo(u.last_login_at)}
+                    {u.email} · {t('users.lastSignIn', timeAgo(u.last_login_at))}
                   </div>
                   {u.role === 'user' && (
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {u.memberships.length === 0 ? (
-                        <span className="text-xs text-amber-600">No project assigned</span>
+                        <span className="text-xs text-amber-600">{t('users.noProject')}</span>
                       ) : (
                         u.memberships.map((m) => (
                           <Badge key={m.projectId}>
-                            {projectName(m.projectId)} · {m.role}
+                            {projectName(m.projectId)} · {t(`memberRole.${m.role}`)}
                           </Badge>
                         ))
                       )}
@@ -238,11 +239,11 @@ export function UsersPage() {
                 </div>
                 {canManage(u) && (
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(u)} aria-label="Edit user">
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(u)} aria-label={t('users.editAria')}>
                       <Pencil className="size-4" />
                     </Button>
                     {u.id !== me?.id && u.role !== 'superadmin' && (
-                      <Button size="icon" variant="ghost" onClick={() => setDeleting(u)} aria-label="Delete user">
+                      <Button size="icon" variant="ghost" onClick={() => setDeleting(u)} aria-label={t('users.deleteAria')}>
                         <Trash2 className="size-4" />
                       </Button>
                     )}
@@ -259,8 +260,8 @@ export function UsersPage() {
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
         loading={remove.isPending}
-        title={`Delete ${deleting?.name}?`}
-        message="The account and its sessions will be removed immediately."
+        title={t('users.deleteConfirm', deleting?.name ?? '')}
+        message={t('users.deleteMessage')}
       />
     </>
   );

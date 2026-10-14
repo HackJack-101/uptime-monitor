@@ -4,20 +4,28 @@ import { CircleCheck, CircleDashed, CircleX, Globe, Plus, RefreshCw, Search, Tri
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Badge, Button, Card, CardHeader, EmptyState, Input, PageHeader, PageLoader, QueryError, StatusDot, useToast } from '../components/ui';
+import { t, tServer } from '../i18n';
 import { api, ApiError, errorText } from '../lib/api';
 import { timeAgo } from '../lib/format';
 import { projectQuery } from '../lib/queries';
 import type { DnsEntry, DnsMonitorRef, DnsView, HostState } from '../lib/types';
 import { BackLink } from './ProjectDetail';
 
-const STATE: Record<HostState, { label: string; dot: string; tone: 'green' | 'red' | 'amber' | 'zinc' | 'brand' }> = {
-  running: { label: 'Running', dot: 'bg-emerald-500', tone: 'green' },
-  degraded: { label: 'Degraded', dot: 'bg-amber-500', tone: 'amber' },
-  error: { label: 'Error', dot: 'bg-rose-500', tone: 'red' },
-  pending: { label: 'Pending', dot: 'bg-sky-400', tone: 'brand' },
-  paused: { label: 'Paused', dot: 'bg-zinc-400', tone: 'zinc' },
-  unmonitored: { label: 'Not monitored', dot: 'border-2 border-dashed border-zinc-300 dark:border-zinc-600', tone: 'zinc' },
+const STATE: Record<HostState, { dot: string; tone: 'green' | 'red' | 'amber' | 'zinc' | 'brand' }> = {
+  running: { dot: 'bg-emerald-500', tone: 'green' },
+  degraded: { dot: 'bg-amber-500', tone: 'amber' },
+  error: { dot: 'bg-rose-500', tone: 'red' },
+  pending: { dot: 'bg-sky-400', tone: 'brand' },
+  paused: { dot: 'bg-zinc-400', tone: 'zinc' },
+  unmonitored: { dot: 'border-2 border-dashed border-zinc-300 dark:border-zinc-600', tone: 'zinc' },
 };
+
+const FILTER_LABEL = {
+  all: 'dns.filterAll',
+  running: 'dns.filterRunning',
+  error: 'dns.filterError',
+  unmonitored: 'dns.filterUnmonitored',
+} as const;
 
 type Filter = 'all' | 'running' | 'error' | 'unmonitored';
 
@@ -69,14 +77,14 @@ function EntryRow({ entry, projectId, canEdit }: { entry: DnsEntry; projectId: n
         {entry.monitors.length > 0 ? (
           <MonitorChips monitors={entry.monitors} />
         ) : (
-          <span className="text-xs text-zinc-400">{wildcard ? `No monitor targets a host matching ${entry.fqdn}` : 'No monitor targets this host'}</span>
+          <span className="text-xs text-zinc-400">{wildcard ? t('dns.noMonitorWildcard', entry.fqdn) : t('dns.noMonitor')}</span>
         )}
         <div className="flex items-center gap-2">
-          <Badge tone={s.tone}>{s.label}</Badge>
+          <Badge tone={s.tone}>{t(`dns.state.${entry.state}`)}</Badge>
           {canEdit && entry.state === 'unmonitored' && !wildcard && (
             <Link to={newMonitorLink(projectId, entry.fqdn)}>
               <Button size="sm" variant="ghost" icon={<Plus className="size-3.5" />}>
-                Monitor it
+                {t('dns.monitorIt')}
               </Button>
             </Link>
           )}
@@ -104,8 +112,8 @@ export function DnsZonePage() {
     onSuccess: (data) => {
       qc.setQueryData(['dns', projectId], data);
       qc.invalidateQueries({ queryKey: ['ovh', projectId] });
-      if (data.error) toast(data.error, 'error');
-      else toast('DNS zone refreshed from OVH');
+      if (data.error) toast(tServer(data.error), 'error');
+      else toast(t('dns.refreshed'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -126,15 +134,15 @@ export function DnsZonePage() {
   if (dns.error instanceof ApiError && dns.error.status === 404) {
     return (
       <>
-        <PageHeader back={<BackLink to={`/projects/${projectId}`}>{p?.name ?? 'Project'}</BackLink>} title="DNS zone" />
+        <PageHeader back={<BackLink to={`/projects/${projectId}`}>{p?.name ?? t('common.project')}</BackLink>} title={t('dns.title')} />
         <Card>
           <EmptyState
             icon={<Globe className="size-5" />}
-            title="No OVH account connected"
-            description="An admin can connect an OVHcloud account and choose the domain to watch in the project settings."
+            title={t('dns.noAccount')}
+            description={t('dns.noAccountHelp')}
             action={
               <Link to={`/projects/${projectId}?tab=settings`}>
-                <Button variant="primary">Open project settings</Button>
+                <Button variant="primary">{t('dns.openSettings')}</Button>
               </Link>
             }
           />
@@ -147,26 +155,26 @@ export function DnsZonePage() {
   const s = d.summary;
 
   const stats = [
-    { label: 'Running', value: s.running + s.degraded, icon: <CircleCheck className="size-4" />, tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', filter: 'running' as const },
-    { label: 'In error', value: s.error, icon: <CircleX className="size-4" />, tone: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400', filter: 'error' as const },
-    { label: 'Not monitored', value: s.unmonitored, icon: <CircleDashed className="size-4" />, tone: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400', filter: 'unmonitored' as const },
-    { label: 'Missing DNS record', value: s.missingRecord, icon: <TriangleAlert className="size-4" />, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400', filter: null },
+    { label: t('dns.statRunning'), value: s.running + s.degraded, icon: <CircleCheck className="size-4" />, tone: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400', filter: 'running' as const },
+    { label: t('dns.statError'), value: s.error, icon: <CircleX className="size-4" />, tone: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400', filter: 'error' as const },
+    { label: t('dns.statUnmonitored'), value: s.unmonitored, icon: <CircleDashed className="size-4" />, tone: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400', filter: 'unmonitored' as const },
+    { label: t('dns.statMissing'), value: s.missingRecord, icon: <TriangleAlert className="size-4" />, tone: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400', filter: null },
   ];
 
   return (
     <>
       <PageHeader
-        back={<BackLink to={`/projects/${projectId}`}>{p?.name ?? 'Project'}</BackLink>}
+        back={<BackLink to={`/projects/${projectId}`}>{p?.name ?? t('common.project')}</BackLink>}
         title={
           <span className="flex items-center gap-3">
             <Globe className="size-6 text-zinc-400" />
             <span className="font-mono">{d.zone}</span>
           </span>
         }
-        description={`OVH DNS zone · synced ${timeAgo(d.syncedAt)} · host states follow the check rules of the linked monitors`}
+        description={t('dns.subtitle', timeAgo(d.syncedAt))}
         actions={
           <Button icon={<RefreshCw className={clsx('size-4', sync.isPending && 'animate-spin')} />} onClick={() => sync.mutate()} disabled={sync.isPending}>
-            Refresh from OVH
+            {t('dns.refresh')}
           </Button>
         }
       />
@@ -175,8 +183,8 @@ export function DnsZonePage() {
         <div className="mb-6 flex items-start gap-2 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/30">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />
           <span>
-            Last synchronisation failed: {d.error}
-            {d.hasRecords && ' The view below uses the last successful snapshot.'}
+            {t('dns.syncFailed', tServer(d.error))}
+            {d.hasRecords && ` ${t('dns.lastSnapshot')}`}
           </span>
         </div>
       )}
@@ -204,12 +212,12 @@ export function DnsZonePage() {
       <Card className="overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-zinc-100 px-4 py-3 sm:flex-row sm:items-center sm:px-5 dark:border-zinc-800/80">
           <h3 className="flex-1 text-sm font-semibold">
-            Hosts <span className="font-normal text-zinc-400">· A, AAAA and CNAME records</span>
+            {t('dns.hosts')} <span className="font-normal text-zinc-400">· {t('dns.hostsRecords')}</span>
           </h3>
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative sm:w-56">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-400" />
-              <Input placeholder="Filter hosts…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 pl-8" />
+              <Input placeholder={t('dns.filterHosts')} value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 pl-8" />
             </div>
             <div className="no-scrollbar flex overflow-x-auto rounded-lg bg-zinc-100 p-0.5 text-xs font-medium dark:bg-zinc-800">
               {(['all', 'running', 'error', 'unmonitored'] as const).map((f) => (
@@ -219,16 +227,16 @@ export function DnsZonePage() {
                   onClick={() => setFilter(f)}
                   className={clsx('rounded-md px-2.5 py-1 whitespace-nowrap', filter === f ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500')}
                 >
-                  {f === 'unmonitored' ? 'Not monitored' : f[0]!.toUpperCase() + f.slice(1)}
+                  {t(FILTER_LABEL[f])}
                 </button>
               ))}
             </div>
           </div>
         </div>
         {!d.hasRecords && !d.error ? (
-          <EmptyState icon={<Globe className="size-5" />} title="Zone not loaded yet" description="Click “Refresh from OVH” to load the records." />
+          <EmptyState icon={<Globe className="size-5" />} title={t('dns.notLoaded')} description={t('dns.notLoadedHelp')} />
         ) : entries.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-zinc-500">No host matches.</p>
+          <p className="px-5 py-10 text-center text-sm text-zinc-500">{t('dns.noMatch')}</p>
         ) : (
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
             {entries.map((e) => (
@@ -241,8 +249,8 @@ export function DnsZonePage() {
       {d.orphans.length > 0 && (
         <Card className="mt-6">
           <CardHeader
-            title="Monitored hosts without a DNS record"
-            description={`These monitors target a host under ${d.zone} that has no A, AAAA or CNAME record in the zone.`}
+            title={t('dns.orphansTitle')}
+            description={t('dns.orphansHelp', d.zone)}
           />
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
             {d.orphans.map((o) => (
@@ -253,7 +261,7 @@ export function DnsZonePage() {
                 </div>
                 <div className="flex flex-1 flex-wrap items-center justify-between gap-2 pl-7 sm:pl-0">
                   <MonitorChips monitors={o.monitors} />
-                  <Badge tone="amber">Missing record</Badge>
+                  <Badge tone="amber">{t('dns.missingRecord')}</Badge>
                 </div>
               </li>
             ))}

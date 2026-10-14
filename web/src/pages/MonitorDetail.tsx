@@ -7,16 +7,17 @@ import { HeartbeatBar, LatencyChart } from '../components/charts';
 import { RulesPanel } from '../components/NotificationPanels';
 import { Button, Card, CardHeader, ConfirmDialog, EmptyState, PageHeader, PageLoader, StatusBadge, Tabs, useToast } from '../components/ui';
 import { useMeta } from '../hooks/useAuth';
+import { t, type MessageKey } from '../i18n';
 import { api, errorText } from '../lib/api';
-import { dateTime, duration, ms, pct, seconds, STATUS_COLOR, timeAgo } from '../lib/format';
+import { dateTime, duration, ms, pct, seconds, STATUS_COLOR, STATUS_LABEL, timeAgo } from '../lib/format';
 import { monitorQuery } from '../lib/queries';
 import type { Heartbeat, Incident, Monitor, MonitorStatus } from '../lib/types';
 import { BackLink } from './ProjectDetail';
 
-const RANGES = [
-  { label: '24h', hours: 24 },
-  { label: '7d', hours: 168 },
-  { label: '30d', hours: 720 },
+const RANGES: { label: MessageKey; hours: number }[] = [
+  { label: 'range.24h', hours: 24 },
+  { label: 'range.7d', hours: 168 },
+  { label: 'range.30d', hours: 720 },
 ];
 
 function target(m: Monitor): string {
@@ -65,7 +66,7 @@ export function MonitorDetailPage() {
     mutationFn: () => api.post<{ result: { status: MonitorStatus; message: string } }>(`/api/monitors/${id}/check`),
     onSuccess: (r) => {
       invalidate();
-      toast(`Check finished: ${r.result.status.toUpperCase()} — ${r.result.message}`, r.result.status === 'down' ? 'error' : 'success');
+      toast(t('monitor.checkFinished', { status: STATUS_LABEL[r.result.status], message: r.result.message }), r.result.status === 'down' ? 'error' : 'success');
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -73,7 +74,7 @@ export function MonitorDetailPage() {
     mutationFn: (enabled: boolean) => api.patch(`/api/monitors/${id}`, { enabled }),
     onSuccess: (_, enabled) => {
       invalidate();
-      toast(enabled ? 'Monitor resumed' : 'Monitor paused');
+      toast(enabled ? t('monitor.resumed') : t('monitor.paused'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -81,14 +82,14 @@ export function MonitorDetailPage() {
     mutationFn: () => api.del(`/api/monitors/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['monitors'] });
-      toast('Monitor deleted');
+      toast(t('monitor.deleted'));
       navigate(`/projects/${detail.data?.monitor.project_id}`);
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
 
   if (detail.isLoading) return <PageLoader />;
-  if (!detail.data) return <EmptyState icon={<Server className="size-5" />} title="Monitor not found" />;
+  if (!detail.data) return <EmptyState icon={<Server className="size-5" />} title={t('monitor.notFound')} />;
   const { monitor: m, stats } = detail.data;
   const canEdit = m.access === 'edit';
   const eff = m.effective!;
@@ -97,7 +98,7 @@ export function MonitorDetailPage() {
   return (
     <>
       <PageHeader
-        back={<BackLink to={`/projects/${m.project_id}`}>{m.project?.name ?? 'Project'}</BackLink>}
+        back={<BackLink to={`/projects/${m.project_id}`}>{m.project?.name ?? t('common.project')}</BackLink>}
         title={
           <span className="flex items-center gap-3">
             {m.name} <StatusBadge status={m.status} />
@@ -112,16 +113,16 @@ export function MonitorDetailPage() {
           canEdit && (
             <>
               <Button icon={<RefreshCw className={clsx('size-4', checkNow.isPending && 'animate-spin')} />} onClick={() => checkNow.mutate()} disabled={checkNow.isPending}>
-                <span className="sm:hidden">Check</span>
-                <span className="hidden sm:inline">Check now</span>
+                <span className="sm:hidden">{t('monitor.check')}</span>
+                <span className="hidden sm:inline">{t('monitor.checkNow')}</span>
               </Button>
               <Button icon={m.enabled ? <Pause className="size-4" /> : <Play className="size-4" />} onClick={() => toggle.mutate(!m.enabled)} loading={toggle.isPending}>
-                {m.enabled ? 'Pause' : 'Resume'}
+                {m.enabled ? t('monitor.pause') : t('monitor.resume')}
               </Button>
               <Link to={`/monitors/${m.id}/edit`}>
-                <Button icon={<Pencil className="size-4" />}>Edit</Button>
+                <Button icon={<Pencil className="size-4" />}>{t('common.edit')}</Button>
               </Link>
-              <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(true)} aria-label="Delete monitor">
+              <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(true)} aria-label={t('monitor.deleteAria')}>
                 <Trash2 className="size-4" />
               </Button>
             </>
@@ -131,8 +132,8 @@ export function MonitorDetailPage() {
 
       <Tabs
         tabs={[
-          { value: 'overview', label: 'Overview' },
-          { value: 'notifications', label: 'Notifications' },
+          { value: 'overview', label: t('monitor.tabOverview') },
+          { value: 'notifications', label: t('monitor.tabNotifications') },
         ]}
         value={tab}
         onChange={setTab}
@@ -144,10 +145,10 @@ export function MonitorDetailPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {[
-              { label: 'Response', value: ms(m.last_latency_ms), sub: `checked ${timeAgo(m.last_check_at)}` },
-              { label: 'Uptime 24h', value: pct(stats['24h']?.uptime), sub: `avg ${ms(stats['24h']?.avg_latency)}` },
-              { label: 'Uptime 7d', value: pct(stats['7d']?.uptime), sub: `avg ${ms(stats['7d']?.avg_latency)}` },
-              { label: 'Uptime 30d', value: pct(stats['30d']?.uptime), sub: `${stats['30d']?.checks ?? 0} checks` },
+              { label: t('monitor.response'), value: ms(m.last_latency_ms), sub: t('monitor.checkedAgo', timeAgo(m.last_check_at)) },
+              { label: t('monitor.uptime24h'), value: pct(stats['24h']?.uptime), sub: t('monitor.avg', ms(stats['24h']?.avg_latency)) },
+              { label: t('monitor.uptime7d'), value: pct(stats['7d']?.uptime), sub: t('monitor.avg', ms(stats['7d']?.avg_latency)) },
+              { label: t('monitor.uptime30d'), value: pct(stats['30d']?.uptime), sub: t('monitor.checks', stats['30d']?.checks ?? 0) },
             ].map((s) => (
               <Card key={s.label} className="p-4 sm:p-5">
                 <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{s.label}</div>
@@ -159,7 +160,7 @@ export function MonitorDetailPage() {
 
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 px-5 py-3 dark:border-zinc-800/80">
-              <h3 className="text-sm font-semibold">Response time</h3>
+              <h3 className="text-sm font-semibold">{t('monitor.responseTime')}</h3>
               <div className="flex rounded-lg bg-zinc-100 p-0.5 text-xs font-medium dark:bg-zinc-800">
                 {RANGES.map((r) => (
                   <button
@@ -168,7 +169,7 @@ export function MonitorDetailPage() {
                     onClick={() => setRange(r.hours)}
                     className={clsx('rounded-md px-2.5 py-1', range === r.hours ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500')}
                   >
-                    {r.label}
+                    {t(r.label)}
                   </button>
                 ))}
               </div>
@@ -181,20 +182,20 @@ export function MonitorDetailPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
-              <CardHeader title="Current status" />
+              <CardHeader title={t('monitor.currentStatus')} />
               <dl className="divide-y divide-zinc-100 text-sm dark:divide-zinc-800/80">
                 {[
-                  ['Last message', m.last_message ?? '—'],
-                  ['Status since', m.status_changed_at ? `${dateTime(m.status_changed_at)} (${duration(m.status_changed_at)})` : '—'],
-                  ['Check interval', `${seconds(eff.intervalS)}${m.interval_s === null ? ' (inherited)' : ''}`],
-                  ['Timeout', `${seconds(eff.timeoutS)}${m.timeout_s === null ? ' (inherited)' : ''}`],
-                  ['Retries', `${eff.retries} every ${seconds(eff.retryIntervalS)}`],
-                  ['Degraded above', eff.degradedThresholdMs ? `${eff.degradedThresholdMs} ms` : 'Disabled'],
+                  [t('monitor.lastMessage'), m.last_message ?? '—'],
+                  [t('monitor.statusSince'), m.status_changed_at ? `${dateTime(m.status_changed_at)} (${duration(m.status_changed_at)})` : '—'],
+                  [t('checkSettings.interval'), `${seconds(eff.intervalS)}${m.interval_s === null ? ` (${t('monitor.inherited')})` : ''}`],
+                  [t('checkSettings.timeout'), `${seconds(eff.timeoutS)}${m.timeout_s === null ? ` (${t('monitor.inherited')})` : ''}`],
+                  [t('checkSettings.retries'), t('monitor.retriesValue', { n: eff.retries, every: seconds(eff.retryIntervalS) })],
+                  [t('checkSettings.degraded'), eff.degradedThresholdMs ? ms(eff.degradedThresholdMs) : t('common.disabled')],
                   ...(m.cert_days_remaining !== null
                     ? [[
-                        'TLS certificate',
+                        t('monitor.tlsCertificate'),
                         <span key="c" className={clsx('inline-flex items-center gap-1', m.cert_days_remaining < 14 ? 'text-amber-600' : 'text-emerald-600')}>
-                          <ShieldCheck className="size-3.5" /> expires in {m.cert_days_remaining} days
+                          <ShieldCheck className="size-3.5" /> {t('monitor.certExpiresIn', m.cert_days_remaining)}
                         </span>,
                       ]]
                     : []),
@@ -208,9 +209,9 @@ export function MonitorDetailPage() {
             </Card>
 
             <Card>
-              <CardHeader title="Incidents" />
+              <CardHeader title={t('monitor.incidents')} />
               {!incidents.data?.length ? (
-                <p className="px-5 py-10 text-center text-sm text-zinc-500">No incident recorded. 🎉</p>
+                <p className="px-5 py-10 text-center text-sm text-zinc-500">{t('monitor.noIncidents')}</p>
               ) : (
                 <ul className="max-h-96 divide-y divide-zinc-100 overflow-y-auto dark:divide-zinc-800/80">
                   {incidents.data.map((i) => (
@@ -218,7 +219,7 @@ export function MonitorDetailPage() {
                       <div className="flex items-center justify-between gap-2 text-sm">
                         <span className="font-medium">{dateTime(i.started_at)}</span>
                         <span className={clsx('text-xs font-medium', i.resolved_at ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
-                          {i.resolved_at ? `Resolved after ${duration(i.started_at, i.resolved_at)}` : `Ongoing · ${duration(i.started_at)}`}
+                          {i.resolved_at ? t('monitor.resolvedAfter', duration(i.started_at, i.resolved_at)) : t('monitor.ongoingFor', duration(i.started_at))}
                         </span>
                       </div>
                       <p className="mt-0.5 truncate text-xs text-zinc-500">{i.cause}</p>
@@ -230,15 +231,15 @@ export function MonitorDetailPage() {
           </div>
 
           <Card>
-            <CardHeader title="Latest checks" />
+            <CardHeader title={t('monitor.latestChecks')} />
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-zinc-500 dark:text-zinc-400">
-                    <th className="px-5 py-2 font-medium">Time</th>
-                    <th className="px-5 py-2 font-medium">Status</th>
-                    <th className="px-5 py-2 text-right font-medium">Response</th>
-                    <th className="hidden px-5 py-2 font-medium sm:table-cell">Message</th>
+                    <th className="px-5 py-2 font-medium">{t('monitor.colTime')}</th>
+                    <th className="px-5 py-2 font-medium">{t('monitor.colStatus')}</th>
+                    <th className="px-5 py-2 text-right font-medium">{t('monitor.colResponse')}</th>
+                    <th className="hidden px-5 py-2 font-medium sm:table-cell">{t('monitor.colMessage')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
@@ -246,9 +247,9 @@ export function MonitorDetailPage() {
                     <tr key={i}>
                       <td className="px-5 py-2 whitespace-nowrap text-zinc-500">{dateTime(r.checked_at)}</td>
                       <td className="px-5 py-2">
-                        <span className="inline-flex items-center gap-2 capitalize">
+                        <span className="inline-flex items-center gap-2">
                           <span className={clsx('size-2 rounded-full', STATUS_COLOR[r.status])} />
-                          {r.status}
+                          {STATUS_LABEL[r.status]}
                         </span>
                       </td>
                       <td className="px-5 py-2 text-right tabular-nums">{ms(r.latency_ms)}</td>
@@ -267,8 +268,8 @@ export function MonitorDetailPage() {
         onClose={() => setConfirmDelete(false)}
         onConfirm={() => remove.mutate()}
         loading={remove.isPending}
-        title={`Delete ${m.name}?`}
-        message="All its history, incidents and specific rules will be deleted."
+        title={t('monitor.deleteConfirm', m.name)}
+        message={t('monitor.deleteMessage')}
       />
     </>
   );

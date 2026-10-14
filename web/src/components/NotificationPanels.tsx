@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMeta } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
 import { EVENT_LABEL } from '../lib/format';
+import { t } from '../i18n';
 import type { Channel, Rule } from '../lib/types';
 import { ChannelEditor } from './ChannelEditor';
 import { RuleEditor } from './RuleEditor';
@@ -32,7 +33,7 @@ export function RulesPanel({ projectId, monitorId, canEdit, inheritProject = tru
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rules', projectId] });
       setDeleting(null);
-      toast('Rule deleted');
+      toast(t('rules.deleted'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -43,12 +44,12 @@ export function RulesPanel({ projectId, monitorId, canEdit, inheritProject = tru
   return (
     <Card>
       <CardHeader
-        title="Notification rules"
-        description={monitorId ? 'Rules from the project (if inherited) and rules specific to this monitor.' : 'Project-wide rules apply to every monitor that inherits project rules.'}
+        title={t('rules.title')}
+        description={monitorId ? t('rules.descMonitor') : t('rules.descProject')}
         actions={
           canEdit && (
             <Button size="sm" variant="primary" icon={<Plus className="size-3.5" />} onClick={() => setEditing('new')}>
-              Add rule
+              {t('rules.add')}
             </Button>
           )
         }
@@ -58,7 +59,7 @@ export function RulesPanel({ projectId, monitorId, canEdit, inheritProject = tru
           <Spinner />
         </div>
       ) : list.length === 0 ? (
-        <EmptyState icon={<Bell className="size-5" />} title="No notification rules" description="Without rules, nobody gets alerted when something breaks." />
+        <EmptyState icon={<Bell className="size-5" />} title={t('rules.empty')} description={t('rules.emptyHelp')} />
       ) : (
         <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
           {list.map((r) => {
@@ -68,21 +69,21 @@ export function RulesPanel({ projectId, monitorId, canEdit, inheritProject = tru
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{r.name}</span>
-                    {inherited ? <Badge tone="brand">Project</Badge> : monitorId ? <Badge>This monitor</Badge> : null}
-                    {!r.enabled && <Badge tone="amber">Disabled</Badge>}
+                    {inherited ? <Badge tone="brand">{t('rules.badgeProject')}</Badge> : monitorId ? <Badge>{t('rules.badgeMonitor')}</Badge> : null}
+                    {!r.enabled && <Badge tone="amber">{t('common.disabled')}</Badge>}
                   </div>
                   <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                     {r.events.map((e) => EVENT_LABEL[e]).join(', ')} → {r.channel_ids.map(channelName).join(', ')}
-                    {r.failure_threshold > 1 && ` · after ${r.failure_threshold} failures`}
-                    {r.reminder_interval_min > 0 && ` · reminder every ${r.reminder_interval_min} min`}
+                    {r.failure_threshold > 1 && ` · ${t('rules.afterFailures', r.failure_threshold)}`}
+                    {r.reminder_interval_min > 0 && ` · ${t('rules.reminderEvery', r.reminder_interval_min)}`}
                   </p>
                 </div>
                 {canEdit && !inherited && (
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(r)} aria-label="Edit rule">
+                    <Button size="icon" variant="ghost" onClick={() => setEditing(r)} aria-label={t('rules.editAria')}>
                       <Pencil className="size-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => setDeleting(r)} aria-label="Delete rule">
+                    <Button size="icon" variant="ghost" onClick={() => setDeleting(r)} aria-label={t('rules.deleteAria')}>
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
@@ -106,8 +107,8 @@ export function RulesPanel({ projectId, monitorId, canEdit, inheritProject = tru
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
         loading={remove.isPending}
-        title="Delete rule?"
-        message={`"${deleting?.name}" will stop sending notifications.`}
+        title={t('rules.deleteTitle')}
+        message={t('rules.deleteMessage', deleting?.name ?? '')}
       />
     </Card>
   );
@@ -123,7 +124,7 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
 
   const test = useMutation({
     mutationFn: (id: number) => api.post<{ ok: boolean; error?: string }>(`/api/channels/${id}/test`),
-    onSuccess: (r) => (r.ok ? toast('Test notification sent') : toast(`Delivery failed: ${r.error}`, 'error')),
+    onSuccess: (r) => (r.ok ? toast(t('channels.testSent')) : toast(t('channels.deliveryFailed', r.error ?? ''), 'error')),
     onError: (e) => toast(errorText(e), 'error'),
   });
   const remove = useMutation({
@@ -132,7 +133,7 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
       qc.invalidateQueries({ queryKey: ['channels', projectId] });
       qc.invalidateQueries({ queryKey: ['rules', projectId] });
       setDeleting(null);
-      toast('Channel deleted');
+      toast(t('channels.deleted'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -142,12 +143,12 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
   return (
     <Card>
       <CardHeader
-        title="Channels"
-        description="Destinations for alerts in this project."
+        title={t('channels.title')}
+        description={t('channels.description')}
         actions={
           canEdit && (
             <Button size="sm" variant="primary" icon={<Plus className="size-3.5" />} onClick={() => setEditing('new')}>
-              Add channel
+              {t('channels.add')}
             </Button>
           )
         }
@@ -157,7 +158,7 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
           <Spinner />
         </div>
       ) : !channels.data?.length ? (
-        <EmptyState icon={<Send className="size-5" />} title="No channels yet" description="Add Discord, Slack, email, Telegram, Signal, ntfy, Gotify or a webhook." />
+        <EmptyState icon={<Send className="size-5" />} title={t('channels.empty')} description={t('channels.emptyHelp')} />
       ) : (
         <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
           {channels.data.map((c) => (
@@ -166,18 +167,18 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{c.name}</span>
                   <Badge>{label(c.type)}</Badge>
-                  {!c.enabled && <Badge tone="amber">Disabled</Badge>}
+                  {!c.enabled && <Badge tone="amber">{t('common.disabled')}</Badge>}
                 </div>
               </div>
               {canEdit && (
                 <div className="flex gap-1">
                   <Button size="sm" variant="ghost" icon={<Send className="size-3.5" />} loading={test.isPending && test.variables === c.id} onClick={() => test.mutate(c.id)}>
-                    Test
+                    {t('common.test')}
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label="Edit channel">
+                  <Button size="icon" variant="ghost" onClick={() => setEditing(c)} aria-label={t('channels.editAria')}>
                     <Pencil className="size-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => setDeleting(c)} aria-label="Delete channel">
+                  <Button size="icon" variant="ghost" onClick={() => setDeleting(c)} aria-label={t('channels.deleteAria')}>
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
@@ -192,8 +193,8 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
         onClose={() => setDeleting(null)}
         onConfirm={() => deleting && remove.mutate(deleting.id)}
         loading={remove.isPending}
-        title="Delete channel?"
-        message={`"${deleting?.name}" will be removed from every rule using it.`}
+        title={t('channels.deleteTitle')}
+        message={t('channels.deleteMessage', deleting?.name ?? '')}
       />
     </Card>
   );

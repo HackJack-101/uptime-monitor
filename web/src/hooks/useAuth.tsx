@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { api, ApiError } from '../lib/api';
-import type { MemberRole, Meta, User } from '../lib/types';
+import { tServer } from '../i18n';
+import type { MemberRole, Meta, TypeDef, User } from '../lib/types';
 
 interface AuthState {
   user: User | null;
@@ -53,6 +54,23 @@ export function useAuth(): AuthState {
   return ctx;
 }
 
+/** Monitor and channel definitions come from the server in English: translate their texts. */
+function translateTypes(defs: TypeDef[]): TypeDef[] {
+  return defs.map((d) => ({
+    ...d,
+    label: tServer(d.label),
+    description: tServer(d.description),
+    fields: d.fields.map((f) => ({
+      ...f,
+      label: tServer(f.label),
+      help: f.help && tServer(f.help),
+      options: f.options?.map((o) => ({ ...o, label: tServer(o.label) })),
+    })),
+  }));
+}
+
+const localizeMeta = (meta: Meta): Meta => ({ ...meta, monitorTypes: translateTypes(meta.monitorTypes), channelTypes: translateTypes(meta.channelTypes) });
+
 export function useMeta() {
-  return useQuery({ queryKey: ['meta'], queryFn: () => api.get<Meta>('/api/meta'), staleTime: Infinity });
+  return useQuery({ queryKey: ['meta'], queryFn: () => api.get<Meta>('/api/meta'), staleTime: Infinity, select: localizeMeta });
 }

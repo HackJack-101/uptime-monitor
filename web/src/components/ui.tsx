@@ -15,6 +15,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
+import { t } from '../i18n';
 import { errorText } from '../lib/api';
 import { STATUS_COLOR, STATUS_LABEL } from '../lib/format';
 import type { MonitorStatus } from '../lib/types';
@@ -81,7 +82,7 @@ export function PasswordInput(props: InputHTMLAttributes<HTMLInputElement>) {
         type="button"
         onClick={() => setShow((s) => !s)}
         className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-        aria-label={show ? 'Hide value' : 'Show value'}
+        aria-label={show ? t('common.hideValue') : t('common.showValue')}
       >
         {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>
@@ -195,9 +196,9 @@ export function QueryError({ error, onRetry }: { error: unknown; onRetry: () => 
     <Card>
       <EmptyState
         icon={<CloudOff className="size-5" />}
-        title="Unable to load this page"
+        title={t('queryError.title')}
         description={errorText(error)}
-        action={<Button onClick={onRetry}>Retry</Button>}
+        action={<Button onClick={onRetry}>{t('common.retry')}</Button>}
       />
     </Card>
   );
@@ -278,7 +279,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    ref.current?.querySelector<HTMLElement>('input, select, textarea, button:not([aria-label="Close"])')?.focus();
+    ref.current?.querySelector<HTMLElement>('input, select, textarea, button:not([data-close])')?.focus();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
@@ -300,7 +301,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
             <h2 className="text-base font-semibold">{title}</h2>
             {description && <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{description}</p>}
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close" className="-mt-1 -mr-2">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close')} data-close className="-mt-1 -mr-2">
             <X className="size-4" />
           </Button>
         </div>
@@ -313,7 +314,7 @@ export function Modal({ open, onClose, title, description, children, footer, siz
   );
 }
 
-export function ConfirmDialog({ open, onClose, onConfirm, title, message, confirmLabel = 'Delete', loading }: { open: boolean; onClose: () => void; onConfirm: () => void; title: string; message: ReactNode; confirmLabel?: string; loading?: boolean }) {
+export function ConfirmDialog({ open, onClose, onConfirm, title, message, confirmLabel, loading }: { open: boolean; onClose: () => void; onConfirm: () => void; title: string; message: ReactNode; confirmLabel?: string; loading?: boolean }) {
   return (
     <Modal
       open={open}
@@ -321,9 +322,9 @@ export function ConfirmDialog({ open, onClose, onConfirm, title, message, confir
       title={title}
       footer={
         <>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="danger" onClick={onConfirm} loading={loading}>
-            {confirmLabel}
+            {confirmLabel ?? t('common.delete')}
           </Button>
         </>
       }

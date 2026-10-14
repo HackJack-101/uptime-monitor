@@ -198,6 +198,9 @@ const migrations: string[] = [
   WHERE resolved_at IS NULL
     AND monitor_id IN (SELECT id FROM monitors WHERE status != 'down');
   `,
+  /* 004 - per-user interface language (NULL = follow the browser) */ `
+  ALTER TABLE users ADD COLUMN locale TEXT;
+  `,
 ];
 
 export class Database {

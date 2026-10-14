@@ -18,6 +18,7 @@ It ships as a single Docker image, ready for Portainer.
 | **Security** | Secrets encrypted with AES-256-GCM, write-only API, scrypt password hashing, HTTP-only SameSite cookies, CSRF protection, rate-limited login, audit log, strict CSP |
 | **OVH DNS** | Connect an OVHcloud account per project and see which subdomains of one DNS zone are running, in error or not monitored |
 | **UI** | Responsive (mobile / tablet / desktop), light & dark themes, live dashboard, response-time charts, incident history, built-in guide |
+| **Languages** | English (US) and French (France), chosen per user in *Account → Language* (defaults to the browser language). Alerts are sent in English |
 
 ---
 
@@ -172,6 +173,7 @@ server/                 Fastify API (TypeScript)
 web/                    React + Vite + Tailwind single-page app
   src/pages/            screens (dashboard, projects, monitors, users, guide…)
   src/components/       UI kit, dynamic forms, charts
+  src/i18n/             translations (en.ts is the source, fr.ts must cover every key)
 Dockerfile              multi-stage image (amd64 + arm64)
 .github/workflows/      CI: typecheck, test, build, publish to GHCR
 ```
@@ -181,7 +183,11 @@ Dockerfile              multi-stage image (amd64 + arm64)
 1. Declare its fields in `server/src/registry/monitors.ts` or `channels.ts` (mark secrets with `kind: 'secret'`).
 2. Implement the checker in `server/src/checkers/` (or the sender in `notifications/senders.ts`) and register it.
 
-The UI form, validation and secret encryption follow automatically.
+The UI form, validation and secret encryption follow automatically. Add the French wording of its labels and help texts to `LABELS` in `web/src/i18n/fr.ts` (untranslated texts are shown in English).
+
+### Translations
+
+UI texts live in `web/src/i18n/en.ts` and are rendered with `t('key')`. `fr.ts` is typed against it, so `npm run typecheck` fails when a key is missing. Texts coming from the server (field definitions, API errors) stay in English in the API and are translated in the browser from their English wording. The guide has one file per language in `web/src/pages/guide/`.
 
 ---
 

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Globe, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
+import { t, tServer } from '../i18n';
 import { api, errorText } from '../lib/api';
 import { timeAgo } from '../lib/format';
 import type { OvhAccount } from '../lib/types';
@@ -26,10 +27,10 @@ function StoredSecret({ value, onReplace }: { value: string | undefined; onRepla
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 dark:border-zinc-700">
       <span className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-        <KeyRound className="size-4 text-emerald-500" /> Stored encrypted — hidden
+        <KeyRound className="size-4 text-emerald-500" /> {t('common.storedSecret')}
       </span>
       <Button size="sm" variant="ghost" onClick={onReplace}>
-        Replace
+        {t('common.replace')}
       </Button>
     </div>
   );
@@ -79,7 +80,7 @@ export function OvhSettings({ projectId }: { projectId: number }) {
     onSuccess: (r) => {
       setZones(r.zones);
       if (!r.zones.includes(zone)) setZone(r.zones[0] ?? '');
-      if (r.zones.length === 0) toast('No DNS zone found on this OVH account', 'error');
+      if (r.zones.length === 0) toast(t('ovh.noZones'), 'error');
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -90,7 +91,7 @@ export function OvhSettings({ projectId }: { projectId: number }) {
       qc.invalidateQueries({ queryKey: ['ovh', projectId] });
       qc.invalidateQueries({ queryKey: ['dns', projectId] });
       setEditing(false);
-      toast('OVH account connected');
+      toast(t('ovh.connectedToast'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -101,7 +102,7 @@ export function OvhSettings({ projectId }: { projectId: number }) {
       qc.invalidateQueries({ queryKey: ['ovh', projectId] });
       qc.removeQueries({ queryKey: ['dns', projectId] });
       setConfirmRemove(false);
-      toast('OVH account disconnected');
+      toast(t('ovh.disconnectedToast'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -111,18 +112,18 @@ export function OvhSettings({ projectId }: { projectId: number }) {
       <CardHeader
         title={
           <span className="flex items-center gap-2">
-            <Globe className="size-4 text-zinc-400" /> OVH DNS zone
+            <Globe className="size-4 text-zinc-400" /> {t('ovh.title')}
           </span>
         }
-        description="Connect an OVHcloud account to compare one DNS zone with the monitors of this project."
+        description={t('ovh.description')}
         actions={
           current && !editing ? (
             <>
               <Link to={`/projects/${projectId}/dns`}>
-                <Button size="sm">Open DNS view</Button>
+                <Button size="sm">{t('ovh.openDnsView')}</Button>
               </Link>
               <Button size="sm" variant="ghost" onClick={startEdit}>
-                Edit
+                {t('common.edit')}
               </Button>
             </>
           ) : null
@@ -131,9 +132,9 @@ export function OvhSettings({ projectId }: { projectId: number }) {
       <div className="p-5">
         {!editing && !current && (
           <div className="flex flex-col items-start gap-3">
-            <p className="text-sm text-zinc-500 dark:text-zinc-400">No OVH account connected.</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t('ovh.none')}</p>
             <Button variant="primary" onClick={startEdit}>
-              Connect OVH account
+              {t('ovh.connect')}
             </Button>
           </div>
         )}
@@ -141,15 +142,15 @@ export function OvhSettings({ projectId }: { projectId: number }) {
         {!editing && current && (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <span>
-              Zone <span className="font-mono font-medium">{current.zone}</span>
+              {t('ovh.zone')} <span className="font-mono font-medium">{current.zone}</span>
             </span>
             <span className="text-zinc-500">
               {endpoints.data?.find((e) => e.value === current.endpoint)?.label ?? current.endpoint}
             </span>
-            <span className="text-zinc-500">Synced {timeAgo(current.syncedAt)}</span>
-            {current.lastError ? <Badge tone="red">{current.lastError}</Badge> : <Badge tone="green">Connected</Badge>}
+            <span className="text-zinc-500">{t('ovh.synced', timeAgo(current.syncedAt))}</span>
+            {current.lastError ? <Badge tone="red">{tServer(current.lastError)}</Badge> : <Badge tone="green">{t('ovh.connected')}</Badge>}
             <Button size="sm" variant="ghost" className="ml-auto text-rose-600" onClick={() => setConfirmRemove(true)}>
-              Disconnect
+              {t('ovh.disconnect')}
             </Button>
           </div>
         )}
@@ -157,19 +158,19 @@ export function OvhSettings({ projectId }: { projectId: number }) {
         {editing && (
           <form className="space-y-4" onSubmit={(e) => (e.preventDefault(), save.mutate())}>
             <div className="rounded-lg bg-zinc-50 px-3 py-2.5 text-xs leading-5 text-zinc-600 dark:bg-zinc-800/50 dark:text-zinc-400">
-              Create read-only credentials (GET on <code>/domain/zone</code> and <code>/domain/zone/*</code>) with the{' '}
+              {t('ovh.helpBefore')}{' '}
               <a
                 href={`${TOKEN_URL[endpoint] ?? TOKEN_URL['ovh-eu']}${TOKEN_RIGHTS}`}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="inline-flex items-center gap-0.5 font-medium text-brand-600 hover:underline dark:text-brand-400"
               >
-                OVH token page <ExternalLink className="size-3" />
+                {t('ovh.helpLink')} <ExternalLink className="size-3" />
               </a>
-              . Secrets are encrypted and never displayed again.
+              {t('ovh.helpAfter')}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="API endpoint" htmlFor="ovh-endpoint">
+              <Field label={t('ovh.endpoint')} htmlFor="ovh-endpoint">
                 <Select id="ovh-endpoint" value={endpoint} onChange={(e) => setEndpoint(e.target.value)}>
                   {endpoints.data?.map((e) => (
                     <option key={e.value} value={e.value}>
@@ -178,17 +179,17 @@ export function OvhSettings({ projectId }: { projectId: number }) {
                   ))}
                 </Select>
               </Field>
-              <Field label="Application key" required htmlFor="ovh-ak">
+              <Field label={t('ovh.applicationKey')} required htmlFor="ovh-ak">
                 <Input id="ovh-ak" value={applicationKey} onChange={(e) => setApplicationKey(e.target.value)} autoComplete="off" />
               </Field>
-              <Field label="Application secret" required htmlFor="ovh-as">
+              <Field label={t('ovh.applicationSecret')} required htmlFor="ovh-as">
                 {applicationSecret === undefined ? (
                   <StoredSecret value={applicationSecret} onReplace={() => setApplicationSecret('')} />
                 ) : (
                   <PasswordInput id="ovh-as" value={applicationSecret} onChange={(e) => setApplicationSecret(e.target.value)} autoComplete="new-password" />
                 )}
               </Field>
-              <Field label="Consumer key" required htmlFor="ovh-ck">
+              <Field label={t('ovh.consumerKey')} required htmlFor="ovh-ck">
                 {consumerKey === undefined ? (
                   <StoredSecret value={consumerKey} onReplace={() => setConsumerKey('')} />
                 ) : (
@@ -198,7 +199,7 @@ export function OvhSettings({ projectId }: { projectId: number }) {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
-                <Field label="Monitored domain" required help="Only one DNS zone is monitored per project." htmlFor="ovh-zone">
+                <Field label={t('ovh.domain')} required help={t('ovh.domainHelp')} htmlFor="ovh-zone">
                   {zones ? (
                     <Select id="ovh-zone" value={zone} onChange={(e) => setZone(e.target.value)}>
                       {zones.map((z) => (
@@ -213,13 +214,13 @@ export function OvhSettings({ projectId }: { projectId: number }) {
                 </Field>
               </div>
               <Button onClick={() => loadZones.mutate()} loading={loadZones.isPending} disabled={!applicationKey} className="sm:mb-[1.375rem]">
-                Load my domains
+                {t('ovh.loadDomains')}
               </Button>
             </div>
             <div className="flex justify-end gap-2">
-              <Button onClick={() => setEditing(false)}>Cancel</Button>
+              <Button onClick={() => setEditing(false)}>{t('common.cancel')}</Button>
               <Button type="submit" variant="primary" loading={save.isPending} disabled={!applicationKey || !zone}>
-                Save & sync
+                {t('ovh.saveSync')}
               </Button>
             </div>
           </form>
@@ -230,9 +231,9 @@ export function OvhSettings({ projectId }: { projectId: number }) {
         onClose={() => setConfirmRemove(false)}
         onConfirm={() => remove.mutate()}
         loading={remove.isPending}
-        title="Disconnect OVH account?"
-        message="The stored credentials and the cached DNS zone of this project will be deleted. Monitors are not affected."
-        confirmLabel="Disconnect"
+        title={t('ovh.disconnectTitle')}
+        message={t('ovh.disconnectMessage')}
+        confirmLabel={t('ovh.disconnect')}
       />
     </Card>
   );

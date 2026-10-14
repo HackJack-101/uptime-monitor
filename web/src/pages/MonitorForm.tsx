@@ -7,6 +7,7 @@ import { CheckSettingsFields, pickOverrides } from '../components/CheckSettingsF
 import { DynamicForm, initialConfig, secretsPayload, type SecretInput } from '../components/DynamicForm';
 import { Button, Card, CardHeader, Field, Input, PageHeader, PageLoader, Switch, useToast } from '../components/ui';
 import { useMeta } from '../hooks/useAuth';
+import { t, tServer } from '../i18n';
 import { api, errorText } from '../lib/api';
 import { monitorQuery, projectQuery } from '../lib/queries';
 import type { CheckSettingsOverrides, Monitor, Project } from '../lib/types';
@@ -56,12 +57,12 @@ function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Pr
       qc.invalidateQueries({ queryKey: ['monitors'] });
       qc.invalidateQueries({ queryKey: ['monitor', m.id] });
       qc.invalidateQueries({ queryKey: ['projects'] });
-      toast(monitor ? 'Monitor saved' : 'Monitor created');
+      toast(monitor ? t('monitorForm.saved') : t('monitorForm.created'));
       navigate(`/monitors/${m.id}`);
     },
     onError: (e) => {
       const details = (e as { details?: string[] }).details;
-      setErrors(details ?? [errorText(e)]);
+      setErrors(details ? details.map((d) => tServer(d)) : [errorText(e)]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
   });
@@ -80,10 +81,10 @@ function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Pr
     >
       <PageHeader
         back={<BackLink to={monitor ? `/monitors/${monitor.id}` : `/projects/${project.id}`}>{monitor ? monitor.name : project.name}</BackLink>}
-        title={monitor ? 'Edit monitor' : 'New monitor'}
+        title={monitor ? t('monitorForm.editTitle') : t('monitorForm.newTitle')}
         description={
           <span className="inline-flex items-center gap-1.5">
-            in <span className="size-2 rounded-sm" style={{ background: project.color }} /> {project.name}
+            {t('monitorForm.in')} <span className="size-2 rounded-sm" style={{ background: project.color }} /> {project.name}
           </span>
         }
       />
@@ -100,7 +101,7 @@ function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Pr
 
       <div className="space-y-6">
         <Card>
-          <CardHeader title="Check type" />
+          <CardHeader title={t('monitorForm.checkType')} />
           <div className="grid grid-cols-2 gap-2 p-5 sm:grid-cols-3">
             {meta.monitorTypes.map((t) => {
               const Icon = TYPE_ICON[t.type] ?? Globe;
@@ -129,45 +130,45 @@ function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Pr
 
         <Card>
           <CardHeader
-            title="Target"
+            title={t('monitorForm.target')}
             description={
               <span className="inline-flex items-center gap-1">
-                <KeyRound className="size-3" /> Fields marked with a key are secrets: encrypted at rest and never displayed again.
+                <KeyRound className="size-3" /> {t('monitorForm.secretsHint')}
               </span>
             }
           />
           <div className="space-y-4 p-5">
-            <Field label="Display name" required htmlFor="m-name">
-              <Input id="m-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Public website" required />
+            <Field label={t('monitorForm.displayName')} required htmlFor="m-name">
+              <Input id="m-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('monitorForm.namePlaceholder')} required />
             </Field>
             <DynamicForm def={def} config={config} onConfig={setConfig} storedSecrets={sameType ? monitor?.secrets : {}} secrets={secrets} onSecrets={setSecrets} />
           </div>
         </Card>
 
         <Card>
-          <CardHeader title="Check rules" description="Leave a field empty to inherit the project default." />
+          <CardHeader title={t('monitorForm.checkRules')} description={t('monitorForm.checkRulesHelp')} />
           <div className="p-5">
-            <CheckSettingsFields value={settings} onChange={setSettings} inherited={inheritedSettings} inheritedFrom="project" />
+            <CheckSettingsFields value={settings} onChange={setSettings} inherited={inheritedSettings} inheritedFrom={t('checkSettings.fromProject')} />
           </div>
         </Card>
 
         <Card>
-          <CardHeader title="Options" />
+          <CardHeader title={t('monitorForm.options')} />
           <div className="space-y-5 p-5">
-            <Switch checked={enabled} onChange={setEnabled} label="Active" description="Paused monitors are not checked and never alert." />
+            <Switch checked={enabled} onChange={setEnabled} label={t('common.active')} description={t('monitorForm.activeHelp')} />
             <Switch
               checked={inherit}
               onChange={setInherit}
-              label="Use project notification rules"
-              description="When off, only the rules defined on this monitor apply."
+              label={t('monitorForm.inherit')}
+              description={t('monitorForm.inheritHelp')}
             />
           </div>
         </Card>
 
         <div className="pb-safe sticky bottom-0 -mx-4 flex justify-end gap-2 border-t border-zinc-200 bg-zinc-50/90 px-4 pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 dark:border-zinc-800 dark:bg-zinc-950/90 sm:dark:bg-transparent">
-          <Button onClick={() => navigate(-1)}>Cancel</Button>
+          <Button onClick={() => navigate(-1)}>{t('common.cancel')}</Button>
           <Button type="submit" variant="primary" loading={save.isPending}>
-            {monitor ? 'Save monitor' : 'Create monitor'}
+            {monitor ? t('monitorForm.save') : t('monitorForm.create')}
           </Button>
         </div>
       </div>

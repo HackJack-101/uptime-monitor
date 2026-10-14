@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useMeta } from '../hooks/useAuth';
 import { api, errorText } from '../lib/api';
 import { EVENT_LABEL } from '../lib/format';
+import { t } from '../i18n';
 import type { Channel, Rule, RuleEvent } from '../lib/types';
 import { Button, Field, Input, Modal, Switch, useToast } from './ui';
 
@@ -24,7 +25,7 @@ export function RuleEditor({
   const meta = useMeta();
   const qc = useQueryClient();
   const toast = useToast();
-  const [name, setName] = useState(rule?.name ?? (monitorId ? 'Monitor alert' : 'Project alert'));
+  const [name, setName] = useState(rule?.name ?? (monitorId ? t('rule.defaultMonitorName') : t('rule.defaultProjectName')));
   const [events, setEvents] = useState<RuleEvent[]>(rule?.events ?? ['down', 'up']);
   const [threshold, setThreshold] = useState(rule?.failure_threshold ?? 1);
   const [reminder, setReminder] = useState(rule?.reminder_interval_min ?? 0);
@@ -40,7 +41,7 @@ export function RuleEditor({
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rules', projectId] });
-      toast(rule ? 'Rule updated' : 'Rule created');
+      toast(rule ? t('rule.updated') : t('rule.created'));
       onClose();
     },
     onError: (e) => toast(errorText(e), 'error'),
@@ -51,24 +52,24 @@ export function RuleEditor({
       open
       onClose={onClose}
       size="lg"
-      title={rule ? 'Edit notification rule' : 'New notification rule'}
-      description={monitorId ? 'This rule only applies to this monitor.' : 'This rule applies to every monitor of the project that inherits project rules.'}
+      title={rule ? t('rule.editTitle') : t('rule.newTitle')}
+      description={monitorId ? t('rule.scopeMonitor') : t('rule.scopeProject')}
       footer={
         <>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t('common.cancel')}</Button>
           <Button variant="primary" loading={save.isPending} onClick={() => save.mutate()} disabled={!events.length || !channelIds.length}>
-            Save rule
+            {t('rule.save')}
           </Button>
         </>
       }
     >
       <div className="space-y-5">
-        <Field label="Name" required htmlFor="rule-name">
+        <Field label={t('common.name')} required htmlFor="rule-name">
           <Input id="rule-name" value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
 
         <fieldset>
-          <legend className="mb-2 text-sm font-medium">Notify when the service…</legend>
+          <legend className="mb-2 text-sm font-medium">{t('rule.notifyWhen')}</legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {(meta.data?.ruleEvents ?? []).map((e) => (
               <button
@@ -90,18 +91,18 @@ export function RuleEditor({
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Failure threshold" help="Consecutive DOWN checks before alerting." htmlFor="rule-threshold">
+          <Field label={t('rule.threshold')} help={t('rule.thresholdHelp')} htmlFor="rule-threshold">
             <Input id="rule-threshold" type="number" min={1} max={100} value={threshold} onChange={(e) => setThreshold(Number(e.target.value) || 1)} />
           </Field>
-          <Field label="Reminder every (minutes)" help="Re-send while still down. 0 = never." htmlFor="rule-reminder">
+          <Field label={t('rule.reminder')} help={t('rule.reminderHelp')} htmlFor="rule-reminder">
             <Input id="rule-reminder" type="number" min={0} max={10080} value={reminder} onChange={(e) => setReminder(Number(e.target.value) || 0)} />
           </Field>
         </div>
 
         <fieldset>
-          <legend className="mb-2 text-sm font-medium">Send to</legend>
+          <legend className="mb-2 text-sm font-medium">{t('rule.sendTo')}</legend>
           {channels.length === 0 ? (
-            <p className="rounded-lg bg-zinc-50 px-3 py-3 text-sm text-zinc-500 dark:bg-zinc-800/50">Create a notification channel in the project first.</p>
+            <p className="rounded-lg bg-zinc-50 px-3 py-3 text-sm text-zinc-500 dark:bg-zinc-800/50">{t('rule.noChannels')}</p>
           ) : (
             <div className="grid gap-2 sm:grid-cols-2">
               {channels.map((c) => (
@@ -125,7 +126,7 @@ export function RuleEditor({
           )}
         </fieldset>
 
-        <Switch checked={enabled} onChange={setEnabled} label="Enabled" />
+        <Switch checked={enabled} onChange={setEnabled} label={t('common.enabled')} />
       </div>
     </Modal>
   );

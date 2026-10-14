@@ -1,7 +1,8 @@
 import clsx from 'clsx';
 import { ChevronRight, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router';
-import { ms, pct, timeAgo } from '../lib/format';
+import { t } from '../i18n';
+import { ms, pct, STATUS_LABEL, timeAgo } from '../lib/format';
 import type { Monitor } from '../lib/types';
 import { HeartbeatBar } from './charts';
 import { StatusDot } from './ui';
@@ -18,7 +19,7 @@ export function MonitorList({ monitors, showProject }: { monitors: Monitor[]; sh
                 <span className={clsx('truncate font-medium', !m.enabled && 'text-zinc-400')}>{m.name}</span>
                 <span className="hidden rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 uppercase sm:inline dark:bg-zinc-800 dark:text-zinc-400">{m.type}</span>
                 {m.cert_days_remaining !== null && m.cert_days_remaining < 14 && (
-                  <span title={`Certificate expires in ${m.cert_days_remaining} days`}>
+                  <span title={t('monitorList.certExpires', m.cert_days_remaining)}>
                     <ShieldAlert className="size-3.5 text-amber-500" />
                   </span>
                 )}
@@ -31,7 +32,7 @@ export function MonitorList({ monitors, showProject }: { monitors: Monitor[]; sh
                     <span className="text-zinc-300 dark:text-zinc-700">·</span>
                   </span>
                 )}
-                <span className="truncate">{m.status === 'paused' ? 'Paused' : `${m.last_message ?? 'Waiting for first check'} · ${timeAgo(m.last_check_at)}`}</span>
+                <span className="truncate">{m.status === 'paused' ? STATUS_LABEL.paused : `${m.last_message ?? t('monitorList.waiting')} · ${timeAgo(m.last_check_at)}`}</span>
               </div>
             </div>
             <HeartbeatBar beats={m.heartbeats ?? []} slots={30} className="hidden w-48 md:flex xl:w-64" />

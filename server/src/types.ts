@@ -2,12 +2,18 @@ export type Role = 'superadmin' | 'admin' | 'user';
 export type MemberRole = 'viewer' | 'editor';
 export type MonitorStatus = 'up' | 'down' | 'degraded' | 'pending' | 'paused';
 
+/** Interface languages offered in the web UI. */
+export const LOCALES = ['en-US', 'fr-FR'] as const;
+export type Locale = (typeof LOCALES)[number];
+
 export interface UserRow {
   id: number;
   email: string;
   name: string;
   password_hash: string;
   role: Role;
+  /** Interface language (see LOCALES), NULL to follow the browser. */
+  locale: string | null;
   active: number;
   last_login_at: string | null;
   created_at: string;

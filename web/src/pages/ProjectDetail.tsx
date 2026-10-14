@@ -8,6 +8,7 @@ import { ChannelsPanel, RulesPanel } from '../components/NotificationPanels';
 import { OvhSettings, useOvhAccount } from '../components/OvhSettings';
 import { Badge, Button, Card, CardHeader, ConfirmDialog, EmptyState, Field, Input, PageHeader, PageLoader, Select, Tabs, Textarea, useToast } from '../components/ui';
 import { useAuth, useMeta } from '../hooks/useAuth';
+import { t } from '../i18n';
 import { api, errorText } from '../lib/api';
 import { projectQuery } from '../lib/queries';
 import type { CheckSettingsOverrides, ManagedUser, MemberRole, Monitor, Project } from '../lib/types';
@@ -44,7 +45,7 @@ function MembersTab({ project }: { project: Project }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
       qc.invalidateQueries({ queryKey: ['projects'] });
-      toast('Members updated');
+      toast(t('members.updated'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -55,16 +56,16 @@ function MembersTab({ project }: { project: Project }) {
   return (
     <Card>
       <CardHeader
-        title="Members"
-        description="Admins always have full access to every project. Assign users as viewer (read-only) or editor (manage monitors & notifications)."
+        title={t('members.title')}
+        description={t('members.description')}
         actions={
           <Button size="sm" variant="primary" loading={save.isPending} onClick={() => save.mutate()}>
-            Save members
+            {t('members.save')}
           </Button>
         }
       />
       {regular.length === 0 ? (
-        <EmptyState icon={<Server className="size-5" />} title="No users" description="Create users from the Users page first." />
+        <EmptyState icon={<Server className="size-5" />} title={t('members.noUsers')} description={t('members.noUsersHelp')} />
       ) : (
         <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
           {regular.map((u) => {
@@ -85,9 +86,9 @@ function MembersTab({ project }: { project: Project }) {
                     setMembers(next);
                   }}
                 >
-                  <option value="">No access</option>
-                  <option value="viewer">Viewer</option>
-                  <option value="editor">Editor</option>
+                  <option value="">{t('common.noAccess')}</option>
+                  <option value="viewer">{t('memberRole.viewer')}</option>
+                  <option value="editor">{t('memberRole.editor')}</option>
                 </Select>
               </li>
             );
@@ -114,7 +115,7 @@ function SettingsTab({ project }: { project: Project }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['project', project.id] });
       qc.invalidateQueries({ queryKey: ['projects'] });
-      toast('Project saved');
+      toast(t('projectSettings.saved'));
     },
     onError: (e) => toast(errorText(e), 'error'),
   });
@@ -122,7 +123,7 @@ function SettingsTab({ project }: { project: Project }) {
     mutationFn: () => api.del(`/api/projects/${project.id}`),
     onSuccess: () => {
       qc.invalidateQueries();
-      toast('Project deleted');
+      toast(t('projectSettings.deleted'));
       navigate('/projects');
     },
     onError: (e) => toast(errorText(e), 'error'),
@@ -131,16 +132,16 @@ function SettingsTab({ project }: { project: Project }) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="General" />
+        <CardHeader title={t('projectSettings.general')} />
         <div className="grid gap-4 p-5 sm:grid-cols-2">
-          <Field label="Name" required htmlFor="ps-name">
+          <Field label={t('common.name')} required htmlFor="ps-name">
             <Input id="ps-name" value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Color">
+          <Field label={t('common.color')}>
             <ColorPicker value={color} onChange={setColor} />
           </Field>
           <div className="sm:col-span-2">
-            <Field label="Description" htmlFor="ps-desc">
+            <Field label={t('common.description')} htmlFor="ps-desc">
               <Textarea id="ps-desc" value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-16 font-sans sm:text-sm" />
             </Field>
           </div>
@@ -148,22 +149,22 @@ function SettingsTab({ project }: { project: Project }) {
       </Card>
       <OvhSettings projectId={project.id} />
       <Card>
-        <CardHeader title="Default check rules" description="Applied to every monitor of this project unless the monitor overrides them. Leave empty to use the global default." />
-        <div className="p-5">{meta.data && <CheckSettingsFields value={settings} onChange={setSettings} inherited={meta.data.defaults} inheritedFrom="global" />}</div>
+        <CardHeader title={t('projectSettings.defaultRules')} description={t('projectSettings.defaultRulesHelp')} />
+        <div className="p-5">{meta.data && <CheckSettingsFields value={settings} onChange={setSettings} inherited={meta.data.defaults} inheritedFrom={t('checkSettings.fromGlobal')} />}</div>
       </Card>
       <div className="flex justify-end">
         <Button variant="primary" loading={save.isPending} onClick={() => save.mutate()}>
-          Save changes
+          {t('projectSettings.saveChanges')}
         </Button>
       </div>
       <Card className="border-rose-200 dark:border-rose-500/30">
         <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-rose-700 dark:text-rose-400">Delete project</h3>
-            <p className="mt-0.5 text-sm text-zinc-500">Permanently deletes all monitors, history, channels and rules of this project.</p>
+            <h3 className="text-sm font-semibold text-rose-700 dark:text-rose-400">{t('projectSettings.deleteTitle')}</h3>
+            <p className="mt-0.5 text-sm text-zinc-500">{t('projectSettings.deleteHelp')}</p>
           </div>
           <Button variant="danger" onClick={() => setConfirm(true)}>
-            Delete project
+            {t('projectSettings.deleteTitle')}
           </Button>
         </div>
       </Card>
@@ -172,8 +173,8 @@ function SettingsTab({ project }: { project: Project }) {
         onClose={() => setConfirm(false)}
         onConfirm={() => remove.mutate()}
         loading={remove.isPending}
-        title={`Delete ${project.name}?`}
-        message="This cannot be undone. Every monitor and its history will be lost."
+        title={t('projectSettings.deleteConfirm', project.name)}
+        message={t('projectSettings.deleteMessage')}
       />
     </div>
   );
@@ -194,25 +195,30 @@ export function ProjectDetailPage() {
   });
 
   if (project.isLoading) return <PageLoader />;
-  if (!project.data) return <EmptyState icon={<Server className="size-5" />} title="Project not found" />;
+  if (!project.data) return <EmptyState icon={<Server className="size-5" />} title={t('project.notFound')} />;
   const p = project.data;
   const canEdit = p.access === 'edit';
 
   const tabs: { value: Tab; label: string }[] = [
-    { value: 'monitors', label: 'Monitors' },
-    { value: 'notifications', label: 'Notifications' },
-    ...(isAdmin ? ([{ value: 'members', label: 'Members' }, { value: 'settings', label: 'Settings' }] as const) : []),
+    { value: 'monitors', label: t('project.tabMonitors') },
+    { value: 'notifications', label: t('project.tabNotifications') },
+    ...(isAdmin
+      ? [
+          { value: 'members' as const, label: t('project.tabMembers') },
+          { value: 'settings' as const, label: t('project.tabSettings') },
+        ]
+      : []),
   ];
 
   return (
     <>
       <PageHeader
-        back={<BackLink to="/projects">Projects</BackLink>}
+        back={<BackLink to="/projects">{t('nav.projects')}</BackLink>}
         title={
           <span className="flex items-center gap-3">
             <span className="size-3.5 rounded" style={{ background: p.color }} />
             {p.name}
-            {!canEdit && <Badge>Read-only</Badge>}
+            {!canEdit && <Badge>{t('common.readOnly')}</Badge>}
           </span>
         }
         description={p.description}
@@ -221,14 +227,14 @@ export function ProjectDetailPage() {
             {ovh.data && (
               <Link to={`/projects/${id}/dns`}>
                 <Button icon={<Globe className="size-4" />}>
-                  DNS zone <span className="hidden font-mono text-xs text-zinc-500 sm:inline">{ovh.data.zone}</span>
+                  {t('project.dnsZone')} <span className="hidden font-mono text-xs text-zinc-500 sm:inline">{ovh.data.zone}</span>
                 </Button>
               </Link>
             )}
             {canEdit && (
               <Link to={`/projects/${id}/monitors/new`}>
                 <Button variant="primary" icon={<Plus className="size-4" />}>
-                  Add monitor
+                  {t('project.addMonitor')}
                 </Button>
               </Link>
             )}
@@ -244,12 +250,12 @@ export function ProjectDetailPage() {
           ) : !monitors.data?.length ? (
             <EmptyState
               icon={<Server className="size-5" />}
-              title="No monitors in this project"
-              description="Add an HTTP endpoint, a TCP port, a host to ping, an SSH server, a DNS record or a TLS certificate."
+              title={t('project.noMonitors')}
+              description={t('project.noMonitorsHelp')}
               action={
                 canEdit && (
                   <Link to={`/projects/${id}/monitors/new`}>
-                    <Button variant="primary">Add monitor</Button>
+                    <Button variant="primary">{t('project.addMonitor')}</Button>
                   </Link>
                 )
               }

@@ -9,6 +9,8 @@ export interface User {
   email: string;
   name: string;
   role: Role;
+  /** Interface language, null to follow the browser. */
+  locale: string | null;
 }
 
 export interface ManagedUser extends User {

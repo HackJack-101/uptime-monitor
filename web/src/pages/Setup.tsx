@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { Button, Field, Input, PasswordInput, PageLoader } from '../components/ui';
+import { t } from '../i18n';
 import { api, errorText } from '../lib/api';
 import { AuthShell } from './Login';
 
@@ -20,7 +21,7 @@ export function SetupPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirm) return setError('Passwords do not match');
+    if (form.password !== form.confirm) return setError(t('common.passwordsMismatch'));
     setLoading(true);
     setError('');
     try {
@@ -37,34 +38,34 @@ export function SetupPage() {
 
   return (
     <AuthShell
-      title="Create the superadmin"
+      title={t('setup.title')}
       subtitle={
         <>
-          First start. Paste the setup token printed in the container logs
+          {t('setup.subtitle')}
           <br />
           (<code className="text-xs">docker logs uptime-monitor</code>).
         </>
       }
     >
       <form onSubmit={submit} className="space-y-4">
-        <Field label="Setup token" htmlFor="token">
+        <Field label={t('setup.token')} htmlFor="token">
           <Input id="token" required value={form.token} onChange={set('token')} autoComplete="off" className="font-mono" />
         </Field>
-        <Field label="Name" htmlFor="name">
+        <Field label={t('common.name')} htmlFor="name">
           <Input id="name" required value={form.name} onChange={set('name')} autoComplete="name" />
         </Field>
-        <Field label="Email" htmlFor="email">
+        <Field label={t('common.email')} htmlFor="email">
           <Input id="email" type="email" required value={form.email} onChange={set('email')} autoComplete="username" />
         </Field>
-        <Field label="Password" htmlFor="password" help="At least 10 characters.">
+        <Field label={t('common.password')} htmlFor="password" help={t('common.passwordHelp')}>
           <PasswordInput id="password" required minLength={10} value={form.password} onChange={set('password')} autoComplete="new-password" />
         </Field>
-        <Field label="Confirm password" htmlFor="confirm">
+        <Field label={t('setup.confirm')} htmlFor="confirm">
           <PasswordInput id="confirm" required value={form.confirm} onChange={set('confirm')} autoComplete="new-password" />
         </Field>
         {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">{error}</p>}
         <Button type="submit" variant="primary" className="w-full" loading={loading}>
-          Create account
+          {t('setup.submit')}
         </Button>
       </form>
     </AuthShell>

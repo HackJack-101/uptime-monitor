@@ -108,7 +108,8 @@ describe('migration 003', () => {
     // Down monitor with a duplicate opened after an edit.
     incident(stillDown, '2026-10-14T09:00:00.000Z');
     incident(stillDown, '2026-10-14T09:30:00.000Z');
-    db.raw.exec('PRAGMA user_version = 2');
+    // Back to the schema of version 2, so that migration 003 (and the later ones) run again.
+    db.raw.exec('ALTER TABLE users DROP COLUMN locale; PRAGMA user_version = 2');
     db.close();
 
     const reopened = new Database(file);

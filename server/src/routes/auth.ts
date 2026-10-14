@@ -5,7 +5,7 @@ import type { AppContext } from '../context.js';
 import { DUMMY_PASSWORD_HASH, hashPassword, safeEqual, verifyPassword } from '../crypto.js';
 import { nowIso } from '../db.js';
 import { badRequest, emailSchema, HttpError, nameSchema, parse, passwordSchema } from '../http.js';
-import type { UserRow } from '../types.js';
+import { LOCALES, type UserRow } from '../types.js';
 
 export function authRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
@@ -29,7 +29,7 @@ export function authRoutes(app: FastifyInstance, ctx: AppContext): void {
       await hashPassword(body.password),
     );
     ctx.setupToken = null;
-    req.user = { id: lastInsertRowid, email: body.email, name: body.name, role: 'superadmin' };
+    req.user = { id: lastInsertRowid, email: body.email, name: body.name, role: 'superadmin', locale: null };
     audit(db, req, 'setup.complete', body.email);
     createSession(db, reply, req, lastInsertRowid);
     return { ok: true };
@@ -45,7 +45,7 @@ export function authRoutes(app: FastifyInstance, ctx: AppContext): void {
       throw new HttpError(401, 'Invalid email or password');
     }
     db.run('UPDATE users SET last_login_at = ? WHERE id = ?', nowIso(), user.id);
-    req.user = { id: user.id, email: user.email, name: user.name, role: user.role };
+    req.user = { id: user.id, email: user.email, name: user.name, role: user.role, locale: user.locale };
     audit(db, req, 'auth.login');
     createSession(db, reply, req, user.id);
     return { user: req.user };
@@ -67,9 +67,10 @@ export function authRoutes(app: FastifyInstance, ctx: AppContext): void {
 
   app.patch('/api/auth/me', async (req) => {
     const user = currentUser(req);
-    const body = parse(z.object({ name: nameSchema }), req.body);
-    db.run('UPDATE users SET name = ?, updated_at = ? WHERE id = ?', body.name, nowIso(), user.id);
-    return { user: { ...user, name: body.name } };
+    const body = parse(z.object({ name: nameSchema.optional(), locale: z.enum(LOCALES).nullable().optional() }), req.body);
+    const updated = { ...user, name: body.name ?? user.name, locale: body.locale === undefined ? user.locale : body.locale };
+    db.run('UPDATE users SET name = ?, locale = ?, updated_at = ? WHERE id = ?', updated.name, updated.locale, nowIso(), user.id);
+    return { user: updated };
   });
 
   app.post('/api/auth/password', loginLimit, async (req) => {

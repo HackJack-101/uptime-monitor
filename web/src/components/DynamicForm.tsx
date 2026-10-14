@@ -1,5 +1,6 @@
 import { KeyRound, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { t } from '../i18n';
 import type { FieldDef, TypeDef } from '../lib/types';
 import { Button, Field, Input, PasswordInput, Select, Switch, Textarea } from './ui';
 
@@ -28,15 +29,15 @@ function HeadersEditor({ value, onChange }: { value: Record<string, string>; onC
     <div className="space-y-2">
       {rows.map(([k, v], i) => (
         <div key={i} className="flex gap-2">
-          <Input placeholder="Header" value={k} onChange={(e) => update(rows.map((r, j) => (j === i ? [e.target.value, r[1]] : r)))} className="w-2/5" />
-          <Input placeholder="Value" value={v} onChange={(e) => update(rows.map((r, j) => (j === i ? [r[0], e.target.value] : r)))} />
-          <Button variant="ghost" size="icon" onClick={() => update(rows.filter((_, j) => j !== i))} aria-label="Remove header">
+          <Input placeholder={t('form.headerName')} value={k} onChange={(e) => update(rows.map((r, j) => (j === i ? [e.target.value, r[1]] : r)))} className="w-2/5" />
+          <Input placeholder={t('form.headerValue')} value={v} onChange={(e) => update(rows.map((r, j) => (j === i ? [r[0], e.target.value] : r)))} />
+          <Button variant="ghost" size="icon" onClick={() => update(rows.filter((_, j) => j !== i))} aria-label={t('form.removeHeader')}>
             <Trash2 className="size-4" />
           </Button>
         </div>
       ))}
       <Button size="sm" variant="ghost" icon={<Plus className="size-3.5" />} onClick={() => update([...rows, ['', '']])}>
-        Add header
+        {t('form.addHeader')}
       </Button>
     </div>
   );
@@ -50,15 +51,15 @@ function SecretField({ f, stored, value, onChange }: { f: FieldDef; stored: bool
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 dark:border-zinc-700">
         <span className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
           <KeyRound className="size-4 text-emerald-500" />
-          {removed ? <span className="text-rose-600">Will be removed on save</span> : 'Stored encrypted — hidden'}
+          {removed ? <span className="text-rose-600">{t('form.willBeRemoved')}</span> : t('common.storedSecret')}
         </span>
         <div className="flex gap-1">
           <Button size="sm" variant="ghost" onClick={() => onChange('')}>
-            Replace
+            {t('common.replace')}
           </Button>
           {!f.required && (
             <Button size="sm" variant="ghost" onClick={() => onChange(removed ? undefined : null)}>
-              {removed ? 'Undo' : 'Remove'}
+              {removed ? t('common.undo') : t('common.remove')}
             </Button>
           )}
         </div>
@@ -107,7 +108,7 @@ export function DynamicForm({
               label={
                 <span className="inline-flex items-center gap-1.5">
                   {f.label}
-                  {isSecret && <KeyRound className="size-3.5 text-zinc-400" aria-label="secret" />}
+                  {isSecret && <KeyRound className="size-3.5 text-zinc-400" aria-label={t('form.secret')} />}
                 </span>
               }
               help={f.help}

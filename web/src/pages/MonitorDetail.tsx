@@ -49,7 +49,7 @@ export function MonitorDetailPage() {
   const detail = useQuery({ ...monitorQuery(id), refetchInterval: 15_000 });
   const results = useQuery({
     queryKey: ['monitor', id, 'results', range],
-    queryFn: () => api.get<{ results: Heartbeat[]; latest: Heartbeat[] }>(`/api/monitors/${id}/results?hours=${range}`),
+    queryFn: () => api.get<{ results: Heartbeat[]; latest: Heartbeat[]; bucketSeconds: number }>(`/api/monitors/${id}/results?hours=${range}`),
     refetchInterval: 30_000,
   });
   const incidents = useQuery({
@@ -174,7 +174,7 @@ export function MonitorDetailPage() {
               </div>
             </div>
             <div className="p-3 sm:p-5">
-              {results.isLoading ? <PageLoader /> : <LatencyChart points={results.data?.results ?? []} />}
+              {results.isLoading ? <PageLoader /> : <LatencyChart points={results.data?.results ?? []} rangeHours={range} bucketSeconds={results.data?.bucketSeconds} />}
               <HeartbeatBar beats={results.data?.results ?? []} slots={60} className="mt-4 h-6" />
             </div>
           </Card>

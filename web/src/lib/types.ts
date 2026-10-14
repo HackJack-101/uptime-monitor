@@ -50,6 +50,9 @@ export interface Heartbeat {
   latency_ms: number | null;
   checked_at: string;
   message?: string;
+  /** Aggregated results only: checks in the bucket and how many failed. */
+  checks?: number;
+  failures?: number;
 }
 
 export interface Monitor extends CheckSettingsOverrides {

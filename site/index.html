@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <title>Uptime Monitor · Self-hosted monitoring for all your web services</title>
+    <meta name="description" content="Self-hosted uptime monitoring organised by project, with user management, encrypted secrets and alerts on Discord, email, Telegram, Signal, Slack, ntfy, Gotify or any webhook. One Docker image." />
+    <meta property="og:title" content="Uptime Monitor" />
+    <meta property="og:description" content="Self-hosted uptime monitoring by project, with users, encrypted secrets and alerts everywhere. One Docker image." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <style>
+      :root {
+        --bg: #fafafa;
+        --bg-soft: #f4f4f5;
+        --card: #ffffff;
+        --border: #e4e4e7;
+        --text: #18181b;
+        --muted: #52525b;
+        --faint: #a1a1aa;
+        --brand: #4f46e5;
+        --brand-soft: #eef2ff;
+        --brand-text: #4338ca;
+        --up: #10b981;
+        --down: #ef4444;
+        --warn: #f59e0b;
+        --shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -8px rgb(0 0 0 / 0.08);
+        --radius: 14px;
+        --font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #09090b;
+          --bg-soft: #111113;
+          --card: #18181b;
+          --border: #27272a;
+          --text: #f4f4f5;
+          --muted: #a1a1aa;
+          --faint: #71717a;
+          --brand: #6366f1;
+          --brand-soft: rgb(99 102 241 / 0.12);
+          --brand-text: #a5b4fc;
+          --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -8px rgb(0 0 0 / 0.5);
+        }
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+      a { color: inherit; }
+      ::selection { background: rgb(99 102 241 / 0.25); }
+      :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 6px; }
+      svg.icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+      .wrap { max-width: 1120px; margin: 0 auto; padding: 0 max(1.25rem, env(safe-area-inset-left)) 0 max(1.25rem, env(safe-area-inset-right)); }
+      section { padding: 88px 0; }
+      .eyebrow { color: var(--brand-text); font-weight: 600; font-size: 0.85rem; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 10px; }
+      h2 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 14px; }
+      .lead { color: var(--muted); font-size: 1.08rem; max-width: 640px; margin: 0; }
+      .center { text-align: center; }
+      .center .lead { margin: 0 auto; }
+
+      /* Header */
+      header {
+        position: sticky; top: 0; z-index: 10;
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        backdrop-filter: saturate(180%) blur(12px);
+        -webkit-backdrop-filter: saturate(180%) blur(12px);
+        border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+        padding-top: env(safe-area-inset-top);
+      }
+      header .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; gap: 16px; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; letter-spacing: -0.01em; }
+      .brand img { width: 30px; height: 30px; }
+      nav { display: flex; align-items: center; gap: 4px; }
+      nav a { text-decoration: none; color: var(--muted); font-size: 0.92rem; font-weight: 500; padding: 6px 12px; border-radius: 8px; }
+      nav a:hover { color: var(--text); background: var(--bg-soft); }
+      @media (max-width: 720px) { nav a.hide-sm { display: none; } }
+
+      .btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 11px 18px; border-radius: 10px;
+        font-weight: 600; font-size: 0.95rem; text-decoration: none;
+        border: 1px solid transparent; cursor: pointer; font-family: inherit;
+        transition: transform 0.15s, background 0.15s, border-color 0.15s;
+      }
+      .btn:hover { transform: translateY(-1px); }
+      .btn-primary { background: var(--brand); color: #fff; box-shadow: 0 6px 20px -6px rgb(79 70 229 / 0.6); }
+      .btn-primary:hover { background: #4338ca; }
+      .btn-ghost { background: var(--card); border-color: var(--border); color: var(--text); }
+      .btn-ghost:hover { border-color: var(--faint); }
+      nav .btn { padding: 7px 14px; font-size: 0.88rem; margin-left: 6px; }
+
+      /* Hero */
+      .hero { padding: 72px 0 56px; position: relative; overflow: hidden; }
+      .hero::before {
+        content: ''; position: absolute; inset: -40% -10% auto; height: 640px; z-index: -1;
+        background: radial-gradient(closest-side, rgb(99 102 241 / 0.18), transparent);
+      }
+      .hero-grid { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+      @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; gap: 44px; } }
+      .pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 0.82rem; font-weight: 500; color: var(--muted);
+        padding: 5px 12px 5px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--card);
+      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--up); box-shadow: 0 0 0 0 rgb(16 185 129 / 0.6); animation: pulse 2s infinite; }
+      @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgb(16 185 129 / 0); } 100% { box-shadow: 0 0 0 0 rgb(16 185 129 / 0); } }
+      h1 { font-size: clamp(2.3rem, 5.4vw, 3.6rem); line-height: 1.07; letter-spacing: -0.035em; margin: 20px 0 18px; }
+      h1 .grad { background: linear-gradient(120deg, #6366f1, #8b5cf6 55%, #10b981); -webkit-background-clip: text; background-clip: text; color: transparent; }
+      .hero p.lead { font-size: 1.15rem; }
+      .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+      .hero-facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 30px; color: var(--muted); font-size: 0.9rem; }
+      .hero-facts span { display: inline-flex; align-items: center; gap: 7px; }
+      .hero-facts svg { width: 16px; height: 16px; color: var(--up); }
+
+      /* Dashboard mock */
+      .mock {
+        background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow), 0 30px 80px -30px rgb(79 70 229 / 0.35);
+        overflow: hidden; font-size: 0.82rem;
+      }
+      .mock-bar { display: flex; align-items: center; gap: 6px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+      .mock-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+      .mock-bar b { margin-left: 10px; font-weight: 500; color: var(--faint); font-family: var(--mono); font-size: 0.75rem; }
+      .mock-body { padding: 16px; display: grid; gap: 12px; }
+      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .stat { border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px; }
+      .stat small { display: block; color: var(--faint); font-size: 0.7rem; }
+      .stat strong { font-size: 1.15rem; letter-spacing: -0.02em; }
+      .stat.up strong { color: var(--up); } .stat.down strong { color: var(--down); } .stat.warn strong { color: var(--warn); }
+      .rows { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+      .row { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 10px; align-items: center; padding: 8px 12px; border-top: 1px solid var(--border); }
+      .row:first-child { border-top: 0; }
+      .row .s { width: 9px; height: 9px; border-radius: 50%; background: var(--up); }
+      .row .s.down { background: var(--down); } .row .s.warn { background: var(--warn); }
+      .row em { font-style: normal; color: var(--faint); font-family: var(--mono); font-size: 0.72rem; }
+      .row .name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bars { display: flex; gap: 2px; }
+      .bars i { width: 4px; height: 16px; border-radius: 2px; background: var(--up); opacity: 0.85; }
+      .bars i.d { background: var(--down); } .bars i.w { background: var(--warn); }
+      @media (max-width: 460px) { .bars i:nth-child(-n+8), .chart-head span:last-child { display: none; } .stats { grid-template-columns: repeat(2, 1fr); } }
+      .chart { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 6px; }
+      .chart-head { display: flex; justify-content: space-between; color: var(--faint); font-size: 0.72rem; margin-bottom: 4px; }
+      .chart-head strong { color: var(--text); font-weight: 600; }
+      .chart svg { width: 100%; height: 74px; display: block; }
+
+      /* Checks strip */
+      .strip { padding: 28px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--bg-soft); }
+      .strip .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px; }
+      .strip p { margin: 0 8px 0 0; color: var(--faint); font-size: 0.85rem; font-weight: 500; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px;
+        border: 1px solid var(--border); background: var(--card); font-size: 0.86rem; font-weight: 500;
+      }
+      .chip svg { width: 15px; height: 15px; color: var(--brand-text); }
+
+      /* Feature grid */
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; }
+      @media (max-width: 920px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+      @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+      .card {
+        background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+        transition: border-color 0.2s, transform 0.2s;
+      }
+      .card:hover { border-color: color-mix(in srgb, var(--brand) 45%, var(--border)); transform: translateY(-2px); }
+      .card .ico { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand-text); margin-bottom: 14px; }
+      .card h3 { margin: 0 0 6px; font-size: 1.03rem; letter-spacing: -0.01em; }
+      .card p { margin: 0; color: var(--muted); font-size: 0.93rem; }
+
+      /* Split sections */
+      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+      .split > *, .hero-grid > * { min-width: 0; }
+      @media (max-width: 920px) { .split { grid-template-columns: 1fr; gap: 36px; } }
+      @media (max-width: 460px) { .roles div { grid-template-columns: 1fr; gap: 2px; } }
+      .list { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 14px; }
+      .list li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; color: var(--muted); }
+      .list li svg { color: var(--up); margin-top: 3px; width: 18px; height: 18px; }
+      .list li strong { color: var(--text); font-weight: 600; }
+
+      .channels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      @media (max-width: 460px) { .channels { grid-template-columns: repeat(2, 1fr); } }
+      .channel {
+        display: flex; align-items: center; gap: 10px; padding: 14px; border-radius: 12px;
+        background: var(--card); border: 1px solid var(--border); font-weight: 600; font-size: 0.92rem;
+      }
+      .channel span { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+
+      .alert {
+        background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--down);
+        border-radius: 12px; padding: 14px 16px; margin-top: 14px; box-shadow: var(--shadow); font-size: 0.9rem;
+      }
+      .alert.ok { border-left-color: var(--up); }
+      .alert b { display: block; margin-bottom: 2px; }
+      .alert small { color: var(--faint); font-family: var(--mono); font-size: 0.75rem; }
+
+      .roles { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+      .roles div { display: grid; grid-template-columns: 130px 1fr; gap: 14px; padding: 14px 18px; border-top: 1px solid var(--border); font-size: 0.92rem; }
+      .roles div:first-child { border-top: 0; }
+      .roles b { font-weight: 600; }
+      .roles span { color: var(--muted); }
+      .tree { font-family: var(--mono); font-size: 0.82rem; color: var(--muted); background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin: 0 0 14px; overflow-x: auto; line-height: 1.75; }
+      .tree b { color: var(--brand-text); font-weight: 600; }
+
+      /* Deploy */
+      .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 44px; counter-reset: step; }
+      @media (max-width: 920px) { .steps { grid-template-columns: 1fr; } }
+      .step { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+      .step::before {
+        counter-increment: step; content: counter(step);
+        display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+        background: var(--brand); color: #fff; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px;
+      }
+      .step h3 { margin: 0 0 6px; font-size: 1rem; }
+      .step p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+      code { font-family: var(--mono); font-size: 0.86em; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 5px; padding: 1px 5px; }
+      .code {
+        position: relative; margin-top: 24px; background: #0f0f12; color: #e4e4e7; border: 1px solid #27272a;
+        border-radius: var(--radius); padding: 20px 22px; font-family: var(--mono); font-size: 0.86rem; line-height: 1.75;
+        overflow-x: auto; white-space: pre;
+      }
+      .code .c { color: #71717a; } .code .k { color: #a5b4fc; } .code .s { color: #6ee7b7; }
+      .copy {
+        position: absolute; top: 12px; right: 12px; font: 600 0.78rem var(--font); color: #a1a1aa;
+        background: #18181b; border: 1px solid #3f3f46; border-radius: 8px; padding: 5px 10px; cursor: pointer;
+      }
+      .copy:hover { color: #fff; }
+
+      /* Final CTA */
+      .final {
+        text-align: center; border-radius: 24px; padding: 56px 28px; color: #fff;
+        background: radial-gradient(circle at 20% 0%, #818cf8, transparent 55%), linear-gradient(135deg, #4f46e5, #312e81);
+      }
+      .final h2 { color: #fff; }
+      .final p { color: #e0e7ff; max-width: 560px; margin: 0 auto; }
+      .final .cta { justify-content: center; }
+      .final .btn-primary { background: #fff; color: #312e81; box-shadow: none; }
+      .final .btn-ghost { background: transparent; color: #fff; border-color: rgb(255 255 255 / 0.35); }
+
+      footer { padding: 36px 0 calc(36px + env(safe-area-inset-bottom)); color: var(--faint); font-size: 0.88rem; }
+      footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+      footer a { text-decoration: none; } footer a:hover { color: var(--text); }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Icon sprite (Lucide, ISC license) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" /></symbol>
+      <symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5M9 8V2M15 8V2M18 8v5a6 6 0 0 1-12 0V8z" /></symbol>
+      <symbol id="i-radar" viewBox="0 0 24 24"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34M4 6h.01M2.29 9.62A10 10 0 1 0 21.31 8.35M16.24 7.76A6 6 0 1 0 8.23 16.67M12 18h.01M17.99 11.66A6 6 0 0 1 15.77 16.67" /><circle cx="12" cy="12" r="2" /><path d="m13.41 10.59 5.66-5.66" /></symbol>
+      <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6M12 19h8" /></symbol>
+      <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1" /><rect x="2" y="16" width="6" height="6" rx="1" /><rect x="9" y="2" width="6" height="6" rx="1" /><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M12 12V8" /></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" /></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.27 21a2 2 0 0 0 3.46 0M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33" /></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></symbol>
+      <symbol id="i-dns" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2" /><rect width="20" height="8" x="2" y="14" rx="2" /><path d="M6 6h.01M6 18h.01" /></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" /><path d="M12 18h.01" /></symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16" /><path d="m19 9-5 5-4-4-3 3" /></symbol>
+      <symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" /></symbol>
+      <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5M12 7v5l4 2" /></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" /><path d="M9 18c-4.51 2-5-2-7-2" /></symbol>
+      <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5M12 22V12" /></symbol>
+    </svg>
+
+    <header>
+      <div class="wrap">
+        <a class="brand" href="#top"><img src="favicon.svg" alt="" />Uptime Monitor</a>
+        <nav aria-label="Main">
+          <a class="hide-sm" href="#features">Features</a>
+          <a class="hide-sm" href="#alerts">Alerts</a>
+          <a class="hide-sm" href="#security">Security</a>
+          <a class="hide-sm" href="#deploy">Deploy</a>
+          <a class="btn btn-ghost" href="https://github.com/HackJack-101/uptime-monitor" rel="noopener">
+            <svg class="icon" style="width: 16px; height: 16px"><use href="#i-github" /></svg>GitHub
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div>
+            <span class="pill"><span class="dot"></span>Self-hosted · One Docker image</span>
+            <h1>Know when your services go down, <span class="grad">before your users do.</span></h1>
+            <p class="lead">
+              Uptime Monitor checks your websites, APIs, servers and certificates around the clock, organises them by project,
+              and alerts the right people on the channel they actually read.
+            </p>
+            <div class="cta">
+              <a class="btn btn-primary" href="#deploy"><svg class="icon"><use href="#i-box" /></svg>Deploy in 5 minutes</a>
+              <a class="btn btn-ghost" href="https://github.com/HackJack-101/uptime-monitor" rel="noopener"><svg class="icon"><use href="#i-github" /></svg>View the source</a>
+            </div>
+            <div class="hero-facts">
+              <span><svg class="icon"><use href="#i-check" /></svg>Your data stays on your server</span>
+              <span><svg class="icon"><use href="#i-check" /></svg>amd64 &amp; arm64</span>
+              <span><svg class="icon"><use href="#i-check" /></svg>Ready for Portainer</span>
+            </div>
+          </div>
+
+          <div class="mock" role="img" aria-label="Preview of the Uptime Monitor dashboard: monitor statuses, uptime bars and a response-time chart">
+            <div class="mock-bar"><i></i><i></i><i></i><b>status.example.com</b></div>
+            <div class="mock-body">
+              <div class="stats">
+                <div class="stat up"><small>Up</small><strong>23</strong></div>
+                <div class="stat down"><small>Down</small><strong>1</strong></div>
+                <div class="stat warn"><small>Degraded</small><strong>2</strong></div>
+                <div class="stat"><small>Uptime 24h</small><strong>99.94%</strong></div>
+              </div>
+              <div class="rows">
+                <div class="row"><span class="s"></span><span class="name">Website</span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><em>142 ms</em></div>
+                <div class="row"><span class="s down"></span><span class="name">Payments API</span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="d"></i><i class="d"></i><i class="d"></i></span><em>timeout</em></div>
+                <div class="row"><span class="s warn"></span><span class="name">Search service</span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i class="w"></i><i></i><i></i><i></i><i></i><i class="w"></i><i class="w"></i><i></i><i class="w"></i><i class="w"></i></span><em>1.8 s</em></div>
+                <div class="row"><span class="s"></span><span class="name">Backup server · SSH</span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><em>38 ms</em></div>
+                <div class="row"><span class="s"></span><span class="name">TLS · example.com</span><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><em>61 days</em></div>
+              </div>
+              <div class="chart">
+                <div class="chart-head"><span><strong>Response time</strong> · Website</span><span>1h · 6h · 12h · <strong>24h</strong> · 7d · 30d</span></div>
+                <svg viewBox="0 0 400 74" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#6366f1" stop-opacity="0.35" /><stop offset="1" stop-color="#6366f1" stop-opacity="0" /></linearGradient>
+                  </defs>
+                  <rect x="262" y="0" width="22" height="74" fill="#ef4444" opacity="0.14" />
+                  <path d="M0 50 L20 47 L40 52 L60 44 L80 48 L100 41 L120 46 L140 39 L160 43 L180 36 L200 42 L220 30 L240 35 L262 22 L284 22 L300 38 L320 44 L340 40 L360 46 L380 42 L400 45 L400 74 L0 74 Z" fill="url(#fill)" />
+                  <path d="M0 50 L20 47 L40 52 L60 44 L80 48 L100 41 L120 46 L140 39 L160 43 L180 36 L200 42 L220 30 L240 35 L262 22 M284 22 L300 38 L320 44 L340 40 L360 46 L380 42 L400 45" fill="none" stroke="#6366f1" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Check types -->
+      <div class="strip">
+        <div class="wrap">
+          <p>Checks</p>
+          <span class="chip"><svg class="icon"><use href="#i-globe" /></svg>HTTP(S)</span>
+          <span class="chip"><svg class="icon"><use href="#i-plug" /></svg>TCP port</span>
+          <span class="chip"><svg class="icon"><use href="#i-radar" /></svg>ICMP ping</span>
+          <span class="chip"><svg class="icon"><use href="#i-terminal" /></svg>SSH</span>
+          <span class="chip"><svg class="icon"><use href="#i-network" /></svg>DNS records</span>
+          <span class="chip"><svg class="icon"><use href="#i-lock" /></svg>TLS certificate expiry</span>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <section id="features">
+        <div class="wrap">
+          <div class="center">
+            <p class="eyebrow">Features</p>
+            <h2>Everything a team needs to watch its services</h2>
+            <p class="lead">Built for agencies, freelancers and small teams who run many sites for many clients, and want one place to watch them all.</p>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-globe" /></svg></div>
+              <h3>Thorough checks</h3>
+              <p>Status codes, keywords, Basic / Bearer / API-key auth for HTTP. SSH with an optional health-check command. DNS answers and certificate expiry.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-folder" /></svg></div>
+              <h3>Organised by project</h3>
+              <p>Each project holds its own monitors, notification channels, rules and members. Perfect for one project per client or per product.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-users" /></svg></div>
+              <h3>Users &amp; access control</h3>
+              <p>A superadmin, admins, and users invited to the projects they need, as viewer or editor. Other projects stay invisible to them.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-sliders" /></svg></div>
+              <h3>Flexible check rules</h3>
+              <p>Interval, timeout, retries and a "degraded" response-time threshold. Set defaults per project and override them per monitor.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-bell" /></svg></div>
+              <h3>Smart notifications</h3>
+              <p>Pick which events go where: down, recovered, degraded, certificate expiring. Failure thresholds and reminders avoid noise.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-dns" /></svg></div>
+              <h3>OVHcloud DNS zone view</h3>
+              <p>Connect a read-only OVH token and see every host of a zone: running, in error, or not monitored at all. One click adds the missing monitor.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-chart" /></svg></div>
+              <h3>Response-time charts</h3>
+              <p>From the last hour to the last 30 days, with outages highlighted, plus uptime percentages for every monitor.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-history" /></svg></div>
+              <h3>Incident history</h3>
+              <p>Every outage is recorded with its start, end and cause. The dashboard shows what is broken now and what broke this week.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-phone" /></svg></div>
+              <h3>Works everywhere</h3>
+              <p>A live dashboard that fits phones, tablets and desktops, in light or dark mode, in English or French, with a built-in guide.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Alerts -->
+      <section id="alerts" style="background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+        <div class="wrap split">
+          <div>
+            <p class="eyebrow">Alerts</p>
+            <h2>Get told where you already are</h2>
+            <p class="lead">Send each project's alerts to its own channels. Every channel is free to use, and you can add as many as you like.</p>
+            <ul class="list">
+              <li><svg class="icon"><use href="#i-check" /></svg><span><strong>No false alarms:</strong> retries and failure thresholds confirm an outage before anyone is woken up.</span></li>
+              <li><svg class="icon"><use href="#i-check" /></svg><span><strong>No forgotten outages:</strong> reminders repeat while a service stays down.</span></li>
+              <li><svg class="icon"><use href="#i-check" /></svg><span><strong>Scoped rules:</strong> a rule applies to a whole project or to a single monitor.</span></li>
+            </ul>
+          </div>
+          <div>
+            <div class="channels">
+              <div class="channel"><span style="background: #5865f2">D</span>Discord</div>
+              <div class="channel"><span style="background: #0ea5e9">@</span>Email</div>
+              <div class="channel"><span style="background: #229ed9">T</span>Telegram</div>
+              <div class="channel"><span style="background: #3a76f0">S</span>Signal</div>
+              <div class="channel"><span style="background: #4a154b">#</span>Slack</div>
+              <div class="channel"><span style="background: #317f6f">n</span>ntfy</div>
+              <div class="channel"><span style="background: #2f8fce">G</span>Gotify</div>
+              <div class="channel"><span style="background: #52525b">{}</span>Webhook</div>
+            </div>
+            <div class="alert">
+              <b>🔴 Payments API is DOWN</b>
+              Project: Shop · Status: DOWN<br />Details: connection timed out after 10000 ms
+            </div>
+            <div class="alert ok">
+              <b>🟢 Payments API is back UP</b>
+              Project: Shop · Status: UP<br />Details: HTTP 200 in 184 ms
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects & roles -->
+      <section>
+        <div class="wrap split">
+          <div>
+            <pre class="tree"><b>Project</b> ─┬─ Monitors ──── monitor rules (optional)
+          ├─ Channels    Discord, email, …
+          ├─ Rules       inherited by every monitor
+          └─ Members     viewer / editor</pre>
+            <div class="roles">
+              <div><b>Superadmin</b><span>Everything, including managing admins. Exactly one.</span></div>
+              <div><b>Admin</b><span>All projects, users and memberships.</span></div>
+              <div><b>Editor</b><span>Manages monitors, channels and rules of their projects.</span></div>
+              <div><b>Viewer</b><span>Read-only access to their projects.</span></div>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">Projects &amp; teams</p>
+            <h2>Share the dashboard, not the keys</h2>
+            <p class="lead">Give a client read-only access to their own project, let a developer manage the monitors of theirs, and keep everything else private.</p>
+            <ul class="list">
+              <li><svg class="icon"><use href="#i-check" /></svg><span><strong>Inheritance:</strong> monitor setting → project default → global default.</span></li>
+              <li><svg class="icon"><use href="#i-check" /></svg><span><strong>Audit log</strong> of sign-ins and of every change to users, projects, monitors, channels and rules.</span></li>
+              <li><svg class="icon"><use href="#i-check" /></svg><span><strong>Your language:</strong> each user picks English or French, and light, dark or system theme.</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Security -->
+      <section id="security" style="background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border)">
+        <div class="wrap">
+          <div class="center">
+            <p class="eyebrow">Security</p>
+            <h2>Your credentials deserve better than plain text</h2>
+            <p class="lead">Monitoring means storing passwords, tokens and keys. Uptime Monitor treats them as secrets from end to end.</p>
+          </div>
+          <div class="grid">
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-lock" /></svg></div>
+              <h3>Encrypted, write-only secrets</h3>
+              <p>HTTP credentials, SSH keys, webhook URLs and bot tokens are encrypted with AES-256-GCM. The API never sends them back.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-shield" /></svg></div>
+              <h3>Hardened sign-in</h3>
+              <p>scrypt password hashing, HTTP-only SameSite cookies, CSRF protection and rate-limited login. Sessions are revoked when a password or role changes.</p>
+            </article>
+            <article class="card">
+              <div class="ico"><svg class="icon"><use href="#i-terminal" /></svg></div>
+              <h3>Safe checks</h3>
+              <p>SSH host key pinning, credentials never forwarded across redirects, secrets masked in error messages, and a container running unprivileged behind a strict CSP.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deploy -->
+      <section id="deploy">
+        <div class="wrap">
+          <div class="center">
+            <p class="eyebrow">Get started</p>
+            <h2>Up and running in five minutes</h2>
+            <p class="lead">One container, one volume, one SQLite database. No external service to run alongside it.</p>
+          </div>
+          <div class="steps">
+            <div class="step">
+              <h3>Deploy the image</h3>
+              <p>Paste the <code>docker-compose.yml</code> into a Portainer stack, or run the command below. The image runs on amd64 and arm64.</p>
+            </div>
+            <div class="step">
+              <h3>Create the superadmin</h3>
+              <p>Open the UI and paste the one-time setup token printed in the container logs.</p>
+            </div>
+            <div class="step">
+              <h3>Add your first project</h3>
+              <p>Create a project, add monitors and channels, and invite your team. The built-in guide walks you through it.</p>
+            </div>
+          </div>
+          <div class="code" id="cmd"><button class="copy" type="button" data-copy="cmd">Copy</button><span class="k">docker run</span> -d --name uptime-monitor --restart unless-stopped \
+  -p 3000:3000 -v uptime-data:/data \
+  -e APP_SECRET=<span class="s">"$(openssl rand -base64 48)"</span> \
+  ghcr.io/hackjack-101/uptime-monitor:latest
+
+<span class="c"># Then open http://localhost:3000 and read the setup token in the logs:</span>
+<span class="k">docker logs</span> uptime-monitor</div>
+          <p class="center" style="color: var(--muted); font-size: 0.92rem; margin-top: 18px">
+            Keep <code>APP_SECRET</code> safe: it encrypts every stored secret. Serve the app over HTTPS behind your reverse proxy in production.
+          </p>
+        </div>
+      </section>
+
+      <section style="padding-top: 0">
+        <div class="wrap">
+          <div class="final">
+            <h2>Stop finding out from your users</h2>
+            <p>Uptime Monitor is free to run on your own server. Read the code, deploy it, and get your first alert in minutes.</p>
+            <div class="cta">
+              <a class="btn btn-primary" href="https://github.com/HackJack-101/uptime-monitor" rel="noopener"><svg class="icon"><use href="#i-github" /></svg>Get it on GitHub</a>
+              <a class="btn btn-ghost" href="https://github.com/HackJack-101/uptime-monitor#readme" rel="noopener"><svg class="icon"><use href="#i-book" /></svg>Read the docs</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <a class="brand" href="#top"><img src="favicon.svg" alt="" style="width: 22px; height: 22px" />Uptime Monitor</a>
+        <span>
+          <a href="https://github.com/HackJack-101/uptime-monitor" rel="noopener">GitHub</a> ·
+          <a href="https://github.com/HackJack-101/uptime-monitor#readme" rel="noopener">Documentation</a> ·
+          <a href="https://github.com/HackJack-101/uptime-monitor/pkgs/container/uptime-monitor" rel="noopener">Docker image</a>
+        </span>
+      </div>
+    </footer>
+
+    <script>
+      document.querySelectorAll('[data-copy]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const block = document.getElementById(button.dataset.copy);
+          const text = block.innerText.replace(button.innerText, '').trim();
+          try {
+            await navigator.clipboard.writeText(text);
+            button.textContent = 'Copied';
+          } catch {
+            button.textContent = 'Select & copy';
+          }
+          setTimeout(() => (button.textContent = 'Copy'), 1800);
+        });
+      });
+    </script>
+  </body>
+</html>

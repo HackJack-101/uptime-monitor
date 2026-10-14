@@ -174,8 +174,9 @@ web/                    React + Vite + Tailwind single-page app
   src/pages/            screens (dashboard, projects, monitors, users, guide…)
   src/components/       UI kit, dynamic forms, charts
   src/i18n/             translations (en.ts is the source, fr.ts must cover every key)
+site/                   public presentation page (static HTML, published on GitHub Pages)
 Dockerfile              multi-stage image (amd64 + arm64)
-.github/workflows/      CI: typecheck, test, build, publish to GHCR
+.github/workflows/      CI: typecheck, test, build, publish to GHCR; website deployment
 ```
 
 ### Adding a monitor type or channel

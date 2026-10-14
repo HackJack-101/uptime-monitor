@@ -87,7 +87,7 @@ function UserEditor({ user, projects, onClose }: { user?: ManagedUser; projects:
                     <span className="size-2.5 rounded-sm" style={{ background: p.color }} />
                     <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
                     <Select
-                      className="h-8 w-36 text-xs"
+                      className="h-9 w-36 sm:h-8 sm:text-xs"
                       value={memberships.get(p.id) ?? ''}
                       onChange={(e) => {
                         const next = new Map(memberships);
@@ -199,7 +199,7 @@ export function UsersPage() {
         <Card>
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
             {users.data?.map((u) => (
-              <li key={u.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
+              <li key={u.id} className="flex items-start gap-3 px-5 py-4 sm:items-center">
                 <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-semibold text-white">
                   {u.name.slice(0, 1).toUpperCase()}
                 </div>

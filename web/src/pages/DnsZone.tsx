@@ -210,7 +210,7 @@ export function DnsZonePage() {
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-zinc-400" />
               <Input placeholder="Filter hosts…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 pl-8" />
             </div>
-            <div className="flex overflow-x-auto rounded-lg bg-zinc-100 p-0.5 text-xs font-medium dark:bg-zinc-800">
+            <div className="no-scrollbar flex overflow-x-auto rounded-lg bg-zinc-100 p-0.5 text-xs font-medium dark:bg-zinc-800">
               {(['all', 'running', 'error', 'unmonitored'] as const).map((f) => (
                 <button
                   key={f}

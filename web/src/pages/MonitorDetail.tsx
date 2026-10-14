@@ -112,7 +112,8 @@ export function MonitorDetailPage() {
           canEdit && (
             <>
               <Button icon={<RefreshCw className={clsx('size-4', checkNow.isPending && 'animate-spin')} />} onClick={() => checkNow.mutate()} disabled={checkNow.isPending}>
-                Check now
+                <span className="sm:hidden">Check</span>
+                <span className="hidden sm:inline">Check now</span>
               </Button>
               <Button icon={m.enabled ? <Pause className="size-4" /> : <Play className="size-4" />} onClick={() => toggle.mutate(!m.enabled)} loading={toggle.isPending}>
                 {m.enabled ? 'Pause' : 'Resume'}

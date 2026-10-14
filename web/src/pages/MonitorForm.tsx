@@ -164,7 +164,7 @@ function MonitorFormInner({ monitor, project }: { monitor?: Monitor; project: Pr
           </div>
         </Card>
 
-        <div className="sticky bottom-0 -mx-4 flex justify-end gap-2 border-t border-zinc-200 bg-zinc-50/90 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 dark:border-zinc-800 dark:bg-zinc-950/90 sm:dark:bg-transparent">
+        <div className="pb-safe sticky bottom-0 -mx-4 flex justify-end gap-2 border-t border-zinc-200 bg-zinc-50/90 px-4 pt-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 dark:border-zinc-800 dark:bg-zinc-950/90 sm:dark:bg-transparent">
           <Button onClick={() => navigate(-1)}>Cancel</Button>
           <Button type="submit" variant="primary" loading={save.isPending}>
             {monitor ? 'Save monitor' : 'Create monitor'}

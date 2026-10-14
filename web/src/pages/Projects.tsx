@@ -62,7 +62,7 @@ function NewProjectModal({ onClose }: { onClose: () => void }) {
           <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Production" />
         </Field>
         <Field label="Description" htmlFor="p-desc">
-          <Textarea id="p-desc" value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-16 font-sans text-sm" />
+          <Textarea id="p-desc" value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-16 font-sans sm:text-sm" />
         </Field>
         <Field label="Color">
           <ColorPicker value={color} onChange={setColor} />

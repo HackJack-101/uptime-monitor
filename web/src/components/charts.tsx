@@ -7,13 +7,13 @@ import type { Heartbeat, MonitorStatus } from '../lib/types';
 export function HeartbeatBar({ beats, slots = 30, className }: { beats: Heartbeat[]; slots?: number; className?: string }) {
   const padded: (Heartbeat | null)[] = [...Array(Math.max(0, slots - beats.length)).fill(null), ...beats.slice(-slots)];
   return (
-    <div className={clsx('flex h-7 items-stretch gap-[3px]', className)}>
+    <div className={clsx('flex h-7 items-stretch gap-[2px] sm:gap-[3px]', className)}>
       {padded.map((b, i) => (
         <div
           key={i}
           title={b ? `${STATUS_LABEL[b.status]} · ${b.latency_ms ?? '—'} ms · ${dateTime(b.checked_at)}` : 'No data'}
           className={clsx(
-            'min-w-[3px] flex-1 rounded-full transition-opacity hover:opacity-70',
+            'min-w-px flex-1 rounded-full transition-opacity hover:opacity-70',
             b ? STATUS_COLOR[b.status as MonitorStatus] : 'bg-zinc-200 dark:bg-zinc-800',
           )}
         />

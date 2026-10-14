@@ -70,8 +70,8 @@ export function DashboardPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Stat label="Up" value={`${c.up ?? 0}/${total}`} icon={<CircleCheck className="size-4" />} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400" />
         <Stat label="Down / degraded" value={`${c.down ?? 0} / ${c.degraded ?? 0}`} icon={<CircleX className="size-4" />} tone="bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400" />
-        <Stat label="Uptime (24h)" value={pct(d.uptime24h)} icon={<Activity className="size-4" />} tone="bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400" />
-        <Stat label="Avg response (24h)" value={ms(d.avgLatency24h)} icon={<Gauge className="size-4" />} tone="bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400" />
+        <Stat label="Uptime 24h" value={pct(d.uptime24h)} icon={<Activity className="size-4" />} tone="bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400" />
+        <Stat label="Response 24h" value={ms(d.avgLatency24h)} icon={<Gauge className="size-4" />} tone="bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">

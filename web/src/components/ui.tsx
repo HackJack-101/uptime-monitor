@@ -49,7 +49,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         'inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60',
         size === 'sm' && 'h-8 px-3 text-xs',
         size === 'md' && 'h-10 px-4 text-sm',
-        size === 'icon' && 'size-9',
+        size === 'icon' && 'size-10 sm:size-9',
         variants[variant],
         className,
       )}
@@ -63,8 +63,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
 // ---------------------------------------------------------------- Inputs
 
+// text-base (16px) on phones: iOS Safari zooms into any focused field with a smaller font.
 const inputBase =
-  'block w-full rounded-lg border-0 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs ring-1 ring-inset ring-zinc-200 placeholder:text-zinc-400 focus:ring-2 focus:ring-brand-500 focus:outline-none disabled:opacity-60 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-800 dark:placeholder:text-zinc-500';
+  'block w-full rounded-lg border-0 bg-white px-3 py-2 text-base text-zinc-900 sm:text-sm shadow-xs ring-1 ring-inset ring-zinc-200 placeholder:text-zinc-400 focus:ring-2 focus:ring-brand-500 focus:outline-none disabled:opacity-60 dark:bg-zinc-900 dark:text-zinc-100 dark:ring-zinc-800 dark:placeholder:text-zinc-500';
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...props }, ref) {
   return <input ref={ref} className={clsx(inputBase, 'h-10', className)} {...props} />;
@@ -88,7 +89,7 @@ export function PasswordInput(props: InputHTMLAttributes<HTMLInputElement>) {
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={clsx(inputBase, 'min-h-24 font-mono text-xs', className)} {...props} />;
+  return <textarea className={clsx(inputBase, 'min-h-24 font-mono sm:text-xs', className)} {...props} />;
 }
 
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
@@ -169,7 +170,9 @@ export function PageHeader({ title, description, actions, back }: { title: React
         <h1 className="truncate text-2xl font-semibold tracking-tight">{title}</h1>
         {description && <div className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{description}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex flex-wrap items-center gap-2 max-sm:w-full max-sm:[&>*:not([aria-label])]:flex-1 max-sm:[&>a>button]:w-full">{actions}</div>
+      )}
     </div>
   );
 }
@@ -226,7 +229,7 @@ export function StatusBadge({ status }: { status: MonitorStatus }) {
 
 export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { value: T; label: ReactNode }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="-mx-4 mb-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <div className="no-scrollbar -mx-4 mb-6 overflow-x-auto px-4 sm:mx-0 sm:px-0">
       <div role="tablist" className="inline-flex min-w-full gap-1 border-b border-zinc-200 dark:border-zinc-800 sm:min-w-0">
         {tabs.map((t) => (
           <button
@@ -236,7 +239,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: { valu
             aria-selected={value === t.value}
             onClick={() => onChange(t.value)}
             className={clsx(
-              '-mb-px border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors',
+              '-mb-px border-b-2 px-2.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors sm:px-3',
               value === t.value
                 ? 'border-brand-600 text-zinc-900 dark:border-brand-400 dark:text-zinc-100'
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200',
@@ -287,7 +290,9 @@ export function Modal({ open, onClose, title, description, children, footer, siz
           </Button>
         </div>
         <div className="overflow-y-auto px-5 pb-5">{children}</div>
-        {footer && <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 px-5 py-4 dark:border-zinc-800 sm:flex-row sm:justify-end">{footer}</div>}
+        {footer && (
+          <div className="pb-safe flex flex-col-reverse gap-2 border-t border-zinc-100 px-5 pt-4 dark:border-zinc-800 sm:flex-row sm:justify-end sm:pb-4">{footer}</div>
+        )}
       </div>
     </div>
   );
@@ -332,7 +337,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 p-4 sm:items-end" aria-live="polite">
+      <div className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center gap-2 px-4 pt-4 sm:items-end sm:pb-4" aria-live="polite">
         {toasts.map((t) => (
           <div
             key={t.id}

@@ -141,7 +141,7 @@ function SettingsTab({ project }: { project: Project }) {
           </Field>
           <div className="sm:col-span-2">
             <Field label="Description" htmlFor="ps-desc">
-              <Textarea id="ps-desc" value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-16 font-sans text-sm" />
+              <Textarea id="ps-desc" value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-16 font-sans sm:text-sm" />
             </Field>
           </div>
         </div>
@@ -221,7 +221,7 @@ export function ProjectDetailPage() {
             {ovh.data && (
               <Link to={`/projects/${id}/dns`}>
                 <Button icon={<Globe className="size-4" />}>
-                  DNS zone <span className="font-mono text-xs text-zinc-500">{ovh.data.zone}</span>
+                  DNS zone <span className="hidden font-mono text-xs text-zinc-500 sm:inline">{ovh.data.zone}</span>
                 </Button>
               </Link>
             )}

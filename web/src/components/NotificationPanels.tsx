@@ -64,7 +64,7 @@ export function RulesPanel({ projectId, monitorId, canEdit, inheritProject = tru
           {list.map((r) => {
             const inherited = monitorId && r.monitor_id === null;
             return (
-              <li key={r.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
+              <li key={r.id} className="flex items-start gap-3 px-5 py-4 sm:items-center">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{r.name}</span>
@@ -161,7 +161,7 @@ export function ChannelsPanel({ projectId, canEdit }: { projectId: number; canEd
       ) : (
         <ul className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
           {channels.data.map((c) => (
-            <li key={c.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center">
+            <li key={c.id} className="flex items-start gap-3 px-5 py-4 sm:items-center">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{c.name}</span>

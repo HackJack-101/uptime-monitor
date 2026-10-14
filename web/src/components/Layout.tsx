@@ -162,7 +162,8 @@ export function Layout() {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-zinc-200/80 bg-white/80 px-4 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/80 lg:hidden">
+      <header className="pt-safe safe-x sticky top-0 z-30 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl dark:border-zinc-800/80 dark:bg-zinc-950/80 lg:hidden">
+        <div className="flex h-14 items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex size-7 items-center justify-center rounded-lg bg-brand-600 text-white">
             <Activity className="size-3.5" />
@@ -172,13 +173,14 @@ export function Layout() {
         <button type="button" onClick={() => setOpen(true)} className="-mr-2 rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Open menu">
           <Menu className="size-5" />
         </button>
+        </div>
       </header>
 
       {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 animate-fade-in bg-zinc-950/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <aside className="absolute inset-y-0 left-0 w-72 max-w-[85vw] animate-slide-up bg-white shadow-2xl dark:bg-zinc-900">
+          <aside className="pt-safe pb-safe absolute inset-y-0 left-0 w-72 max-w-[85vw] animate-slide-up bg-white pl-[env(safe-area-inset-left)] shadow-2xl dark:bg-zinc-900">
             <button type="button" onClick={() => setOpen(false)} className="absolute top-4 right-3 rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800" aria-label="Close menu">
               <X className="size-4" />
             </button>
@@ -187,7 +189,7 @@ export function Layout() {
         </div>
       )}
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+      <main className="safe-x mx-auto max-w-7xl py-6 sm:px-6 lg:px-8 lg:py-10">
         <Outlet />
       </main>
     </div>

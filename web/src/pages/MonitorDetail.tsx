@@ -15,6 +15,9 @@ import type { Heartbeat, Incident, Monitor, MonitorStatus } from '../lib/types';
 import { BackLink } from './ProjectDetail';
 
 const RANGES: { label: MessageKey; hours: number }[] = [
+  { label: 'range.1h', hours: 1 },
+  { label: 'range.6h', hours: 6 },
+  { label: 'range.12h', hours: 12 },
   { label: 'range.24h', hours: 24 },
   { label: 'range.7d', hours: 168 },
   { label: 'range.30d', hours: 720 },
@@ -167,7 +170,7 @@ export function MonitorDetailPage() {
                     key={r.hours}
                     type="button"
                     onClick={() => setRange(r.hours)}
-                    className={clsx('rounded-md px-2.5 py-1', range === r.hours ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500')}
+                    className={clsx('rounded-md px-2 py-1 whitespace-nowrap sm:px-2.5', range === r.hours ? 'bg-white shadow-sm dark:bg-zinc-700' : 'text-zinc-500')}
                   >
                     {t(r.label)}
                   </button>

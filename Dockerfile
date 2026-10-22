@@ -4,7 +4,7 @@
 # digest so a rebuild never silently picks up an older or tampered image. Dependabot bumps both.
 
 # ---- Build: compile the web UI and the server -------------------------------
-FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS build
+FROM node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -15,7 +15,7 @@ COPY web web
 RUN npm run build
 
 # ---- Production dependencies of the server only ----------------------------
-FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS deps
+FROM node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0 AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -23,7 +23,7 @@ COPY web/package.json web/
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --workspace server --no-audit --no-fund
 
 # ---- Runtime ------------------------------------------------------------------
-FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS runtime
+FROM node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0 AS runtime
 # Release tag (empty = package.json version), commit SHA and repository URL, injected by CI.
 ARG APP_VERSION=
 ARG GIT_COMMIT=

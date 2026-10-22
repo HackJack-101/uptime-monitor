@@ -1,7 +1,10 @@
 # syntax=docker/dockerfile:1.7
 
+# Base image (all stages): pinned Node.js release on Debian 13 (trixie), locked to its
+# digest so a rebuild never silently picks up an older or tampered image. Dependabot bumps both.
+
 # ---- Build: compile the web UI and the server -------------------------------
-FROM node:24-bookworm-slim AS build
+FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -12,7 +15,7 @@ COPY web web
 RUN npm run build
 
 # ---- Production dependencies of the server only ----------------------------
-FROM node:24-bookworm-slim AS deps
+FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -20,7 +23,7 @@ COPY web/package.json web/
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --workspace server --no-audit --no-fund
 
 # ---- Runtime ------------------------------------------------------------------
-FROM node:24-bookworm-slim AS runtime
+FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS runtime
 # Release tag (empty = package.json version), commit SHA and repository URL, injected by CI.
 ARG APP_VERSION=
 ARG GIT_COMMIT=
@@ -31,7 +34,10 @@ LABEL org.opencontainers.image.title="uptime-monitor" \
       org.opencontainers.image.revision="${GIT_COMMIT}" \
       org.opencontainers.image.source="${SOURCE_URL}"
 
+# Upgrade the OS packages (ca-certificates, openssl…) to the latest Debian security
+# fixes. No curl or wget is installed: the health check uses Node's own fetch.
 RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends iputils-ping ca-certificates tini \
  && rm -rf /var/lib/apt/lists/*
 

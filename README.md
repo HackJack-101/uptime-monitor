@@ -147,7 +147,7 @@ Create **read-only** credentials on the OVH token page (`https://eu.api.ovh.com/
 
 ## Development
 
-Requirements: **Node.js 24+**.
+Requirements: **Node.js 24.22.1+**.
 
 ```bash
 npm install

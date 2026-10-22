@@ -6,6 +6,10 @@ on:
     tags: ['v*']
   pull_request:
     branches: [master]
+  # Weekly rebuild so the published image picks up Debian security updates.
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -74,5 +78,7 @@ jobs:
             APP_VERSION=${{ github.ref_type == 'tag' && github.ref_name || '' }}
             GIT_COMMIT=${{ github.sha }}
             SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
+          pull: true
+          no-cache: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

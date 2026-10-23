@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
-# Base image (all stages): pinned Node.js release on Debian 13 (trixie), locked to its
-# digest so a rebuild never silently picks up an older or tampered image. Dependabot bumps both.
+# Base image (all stages): the newest Node.js 24 release on Debian 13 (trixie).
+ARG NODE_VERSION=24-trixie-slim
+# Oldest Node allowed: 24.22.1 ships NSS 3.131.1, the fix for CVE-2026-111943.
+# The floating tag above still picks up newer releases; this only sets a floor.
+ARG NODE_MIN_VERSION=24.22.1
 
 # ---- Build: compile the web UI and the server -------------------------------
-FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS build
+FROM node:${NODE_VERSION} AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -15,7 +18,7 @@ COPY web web
 RUN npm run build
 
 # ---- Production dependencies of the server only ----------------------------
-FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS deps
+FROM node:${NODE_VERSION} AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -23,7 +26,12 @@ COPY web/package.json web/
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev --workspace server --no-audit --no-fund
 
 # ---- Runtime ------------------------------------------------------------------
-FROM node:24.22.1-trixie-slim@sha256:43b9ba1142b8dcf33fa8f922ca1be85714adc444e0586c7cf7726daaeabc1bea AS runtime
+FROM node:${NODE_VERSION} AS runtime
+ARG NODE_MIN_VERSION
+RUN node -e 'const [a, b] = [process.versions.node, process.argv[1]].map((v) => v.split(".").map(Number)); \
+  const older = a.findIndex((n, i) => n !== b[i]); \
+  if (older !== -1 && a[older] < b[older]) { console.error(`Node ${process.versions.node} is older than ${process.argv[1]}`); process.exit(1); }' \
+  "$NODE_MIN_VERSION"
 # Release tag (empty = package.json version), commit SHA and repository URL, injected by CI.
 ARG APP_VERSION=
 ARG GIT_COMMIT=

@@ -1,12 +1,16 @@
 name: CI
 
+# Pull requests: typecheck, tests and build (the Docker build is checked by docker-pr.yml).
+# master: the same checks, then the `latest` image. Releases are built by release.yml.
 on:
   push:
     branches: [master]
-    tags: ['v*']
+    # Docs-only changes don't need a new image. Pull requests always run the
+    # checks, since a required check that never starts would block the merge.
+    paths-ignore: ['**.md']
   pull_request:
     branches: [master]
-  # Weekly rebuild so the published image picks up Debian security updates.
+  # Weekly rebuild so the published image picks up Debian security updates and Node patches.
   schedule:
     - cron: '17 4 * * 1'
   workflow_dispatch:
@@ -16,7 +20,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
@@ -36,6 +40,7 @@ jobs:
   docker:
     name: Build & publish Docker image
     needs: test
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -47,7 +52,6 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -60,22 +64,18 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=latest
             type=sha,prefix=sha-
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=pr
 
-      - name: Build (and push on master / tags)
+      - name: Build & push
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            APP_VERSION=${{ github.ref_type == 'tag' && github.ref_name || '' }}
             GIT_COMMIT=${{ github.sha }}
             SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
           pull: true

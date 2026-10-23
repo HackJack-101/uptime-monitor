@@ -25,7 +25,7 @@ It ships as a single Docker image, ready for Portainer.
 ## Quick start with Portainer
 
 1. In Portainer, go to **Stacks → Add stack** and paste the content of [`docker-compose.yml`](docker-compose.yml).
-2. The stack uses the image published by CI: `ghcr.io/hackjack-101/uptime-monitor:latest`.
+2. The stack uses the image published by CI: `ghcr.io/hackjack-101/uptime-monitor:latest` (the `master` branch). Set `UPTIME_VERSION` to a release such as `1.2.0`, or to `stable` to follow releases.
 3. Under **Environment variables**, set at least:
    - `APP_SECRET`: a long random string (`openssl rand -base64 48`). **Keep it safe**: it encrypts every stored secret.
    - `PUBLIC_URL`: the URL you will use to reach the UI (used for links in alerts).
@@ -194,15 +194,40 @@ UI texts live in `web/src/i18n/en.ts` and are rendered with `t('key')`. `fr.ts` 
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull request to `master`:
+| Event | Workflow | Runs |
+| --- | --- | --- |
+| Pull request to `master` | `ci.yml` | Install, typecheck, tests, build. |
+| Pull request changing the `Dockerfile` | `docker-pr.yml` | A multi-arch (`linux/amd64`, `linux/arm64`) Docker build, to catch errors before merging. The image is not pushed. |
+| Push to `master` | `ci.yml` | The same checks, then the multi-arch image pushed to GHCR as `latest` and `sha-<commit>`. Docs-only changes skip it. |
+| Weekly (Monday 04:17 UTC) or manual run | `ci.yml` | The same as a push to `master`, rebuilt without the layer cache so `latest` picks up Debian security updates and Node patches. |
+| Published release (tag `v1.2.0`) | `release.yml` | Image tagged `1.2.0`, `1.2`, `stable` and `sha-<commit>`, then the Portainer deploy. No tests: the commit passed them on its pull request. |
+| Published pre-release (`v1.3.0-rc.1`) | `release.yml` | Image tagged `1.3.0-rc.1` and `sha-<commit>` only: no `stable`, no deploy. |
 
-1. Install, typecheck, run the tests, build.
-2. Build a multi-arch Docker image (`linux/amd64`, `linux/arm64`).
-3. On `master`, push `ghcr.io/hackjack-101/uptime-monitor:latest` and `:sha-<commit>`. On `vX.Y.Z` tags, also push `:X.Y.Z` and `:X.Y`.
+Release tags must be semver (`v1.2.0` or `1.2.0`). Pushing a tag alone builds nothing; publish a release from it.
 
-The commit is baked into the image. The web UI shows the version and the short commit SHA at the bottom of the sidebar (e.g. `v0.1.0 · c23a429`), linking to the commit on GitHub.
+The commit is baked into the image. The web UI shows the version and the short commit SHA at the bottom of the sidebar (e.g. `v0.1.0 · c23a429`), linking to the commit on GitHub. `/api/health` also reports the version.
 
-To redeploy in Portainer, use **Pull and redeploy** on the stack, or enable a stack webhook.
+### Deploying releases to Portainer
+
+The `deploy` job calls the stack's Portainer webhook (Portainer Business Edition; the free 3-node licence is enough) with `?UPTIME_VERSION=<version>`. Portainer pulls the image and redeploys the stack; the job then polls `APP_URL/api/health` until it reports the new version, and fails after 10 minutes otherwise.
+
+1. In Portainer, open the stack's **Editor** and set the image to:
+   ```yaml
+   image: ghcr.io/hackjack-101/uptime-monitor:${UPTIME_VERSION:-stable}
+   ```
+   Remove `UPTIME_VERSION` from the stack's environment variables, so the value sent by the webhook is the one used. A manual redeploy without it runs `stable`, the latest release.
+2. Still in the **Editor**, turn on **Create a Stack webhook** and copy its URL.
+3. In GitHub, open **Settings** → **Environments** → **New environment** and name it `production`. Optionally add yourself as a required reviewer to approve each deploy.
+4. In that environment, add:
+
+   | Name | Kind | Value |
+   | --- | --- | --- |
+   | `PORTAINER_WEBHOOK_URL` | secret | The webhook URL. Anyone who has it can redeploy the stack. |
+   | `APP_URL` | variable | The app's public URL, such as `https://uptime.example.com` (optional: enables the version check) |
+
+If a proxy puts basic auth in front of Portainer, exempt `/api/stacks/webhooks/` from it: the webhook's id is its secret.
+
+To roll back, re-run the `deploy` job of an earlier release. Without the webhook, use **Pull and redeploy** on the stack.
 
 ## Commit convention
 

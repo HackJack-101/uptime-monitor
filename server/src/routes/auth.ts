@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { audit, createSession, currentUser, destroySession } from '../auth.js';
+import { buildInfo } from '../build-info.js';
 import type { AppContext } from '../context.js';
 import { DUMMY_PASSWORD_HASH, hashPassword, safeEqual, verifyPassword } from '../crypto.js';
 import { nowIso } from '../db.js';
@@ -11,7 +12,8 @@ export function authRoutes(app: FastifyInstance, ctx: AppContext): void {
   const { db } = ctx;
   const loginLimit = { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } };
 
-  app.get('/api/health', async () => ({ status: 'ok' }));
+  // The version lets the release workflow wait for a Portainer redeploy to finish.
+  app.get('/api/health', async () => ({ status: 'ok', version: buildInfo.version }));
 
   app.get('/api/setup', async () => ({ needsSetup: ctx.setupToken !== null }));
 

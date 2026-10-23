@@ -1,0 +1,99 @@
+name: Release
+
+# A published release builds its version (and `stable`), then deploys it to Portainer.
+# No tests here: the released commit already passed them on its pull request and on master.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    name: Build & publish Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=stable,enable=${{ !github.event.release.prerelease }}
+            type=sha,prefix=sha-
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ steps.meta.outputs.version }}
+            GIT_COMMIT=${{ github.sha }}
+            SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
+          pull: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Portainer
+    needs: docker
+    # Pre-releases get an image but aren't deployed.
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      # The stack webhook (Portainer Business Edition) pulls and redeploys. UPTIME_VERSION reaches
+      # the stack file, whose image is ghcr.io/…/uptime-monitor:${UPTIME_VERSION:-stable}.
+      - name: Trigger the Portainer webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+          VERSION: ${{ needs.docker.outputs.version }}
+        run: |
+          : "${WEBHOOK_URL:?Set the PORTAINER_WEBHOOK_URL secret}"
+          [[ "$WEBHOOK_URL" == *\?* ]] && sep="&" || sep="?"
+          curl -sS --fail-with-body --max-time 60 -X POST "${WEBHOOK_URL}${sep}UPTIME_VERSION=${VERSION}"
+      # The webhook returns before the redeploy ends: wait for the app to report the new version.
+      - name: Wait for the new version
+        if: vars.APP_URL != ''
+        env:
+          HEALTH_URL: ${{ vars.APP_URL }}/api/health
+          EXPECTED: ${{ needs.docker.outputs.version }}
+        run: |
+          for _ in $(seq 60); do
+            running="$(curl -sS --max-time 10 "$HEALTH_URL" | jq -r '.version // empty' 2>/dev/null || true)"
+            if [[ "$running" == "$EXPECTED" ]]; then echo "Running $running"; exit 0; fi
+            sleep 10
+          done
+          echo "::error::Still running ${running:-an unknown version} after 10 minutes, expected $EXPECTED"
+          exit 1

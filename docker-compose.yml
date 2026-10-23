@@ -1,7 +1,8 @@
 # Example stack — paste it into Portainer (Stacks → Add stack) or run `docker compose up -d`.
 services:
   uptime-monitor:
-    image: ghcr.io/hackjack-101/uptime-monitor:latest
+    # UPTIME_VERSION: a release (1.2.0), `stable` (the latest release) or `latest` (master).
+    image: ghcr.io/hackjack-101/uptime-monitor:${UPTIME_VERSION:-latest}
     container_name: uptime-monitor
     restart: unless-stopped
     ports:
